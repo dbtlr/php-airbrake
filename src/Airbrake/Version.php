@@ -12,7 +12,7 @@ namespace Airbrake;
 class Version
 {
 	const NAME    = 'nodrew-php-airbrake';
-	const NUMBER  = '0.8';
+	const NUMBER  = '1.0';
 	const APP_URL = 'https://github.com/nodrew/php-airbrake';
 	const API     = '2.0';
 }
