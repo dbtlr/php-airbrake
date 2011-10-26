@@ -43,7 +43,7 @@ class Connection
 
 	/**
 	 * @param Airbrake\Notice $notice
-	 * @return integer
+	 * @return string
 	 **/
 	public function send(Notice $notice)
 	{
@@ -57,11 +57,9 @@ class Connection
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $this->headers);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
-		echo curl_exec($curl);
-
-		$status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+		$return = curl_exec($curl);
 		curl_close($curl);
 
-		return $status;
+		return $return;
 	}    
 }

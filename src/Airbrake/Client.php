@@ -40,6 +40,7 @@ class Client
      * Notify on an error message.
      *
      * @param string $message
+	 * @return string
      */
     public function notifyOnError($message)
     {
@@ -62,6 +63,7 @@ class Client
      * Notify on an exception
      *
      * @param Airbrake\Notice $notice
+	 * @return string
      */
     public function notifyOnException(Exception $exception)
     {

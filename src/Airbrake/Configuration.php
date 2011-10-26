@@ -31,6 +31,19 @@ class Configuration extends Record
     protected $_hostname;
     
     /**
+     * Load the given data array to the record.
+     *
+     * @param string $apiKey
+     * @param array|stdClass $data
+     */
+    public function __construct($apiKey, $data = array())
+    {
+        $data['apiKey'] = $apiKey;
+
+        parent::__construct($data);
+    }
+    
+    /**
      * Initialize the data source.
      */
     protected function initialize()
