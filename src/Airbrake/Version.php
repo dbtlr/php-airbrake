@@ -2,14 +2,17 @@
 namespace Airbrake;
 
 /**
- * Airbrake exception.
+ * Airbrake notice class.
  *
  * @package		Airbrake
  * @author		Drew Butler <drew@abstracting.me>
  * @copyright	(c) 2011 Drew Butler
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Exception extends \Exception 
+class Version
 {
-    
+	const NAME    = 'nodrew-php-airbrake';
+	const NUMBER  = '0.8';
+	const APP_URL = 'https://github.com/nodrew/php-airbrake';
+	const API     = '2.0';
 }
