@@ -49,15 +49,17 @@ class Connection
 	{
 		$curl = curl_init();
 
+        $xml = $notice->toXml($this->configuration);
+
 		curl_setopt($curl, CURLOPT_URL, self::SERVICE_URL);
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_HEADER, 0);
 		curl_setopt($curl, CURLOPT_TIMEOUT, $this->configuration->timeout);
-		curl_setopt($curl, CURLOPT_POSTFIELDS, $notice->toXml($this->configuration));
+		curl_setopt($curl, CURLOPT_POSTFIELDS, $xml);
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $this->headers);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
-		$return = curl_exec($curl);
+        $return = curl_exec($curl);
 		curl_close($curl);
 
 		return $return;

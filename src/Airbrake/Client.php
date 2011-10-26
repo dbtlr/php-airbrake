@@ -94,6 +94,7 @@ class Client
         if (class_exists('Resque') && $this->configuration->queue) {
             $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
             \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
+            return;
         }
 
         return $this->connection->send($notice);

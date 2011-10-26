@@ -50,6 +50,10 @@ class Notice extends Record
 		$notifier->addChild('version', Version::NUMBER);
 		$notifier->addChild('url', Version::APP_URL);
 
+		$env = $doc->addChild('server-environment');
+		$env->addChild('project-root', $configuration->get('projectRoot'));
+		$env->addChild('environment-name', $configuration->get('environmentName'));
+
 		$error = $doc->addChild('error');
 		$error->addChild('class', $this->errorClass);
 		$error->addChild('message', $this->errorMessage);
@@ -72,10 +76,6 @@ class Notice extends Record
 		$this->array2Node($request, 'params', $configuration->getParamters());
 		$this->array2Node($request, 'session', $configuration->get('sessionData'));
 		$this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
-
-		$env = $doc->addChild('server-environment');
-		$env->addChild('project-root', $configuration->get('projectRoot'));
-		$env->addChild('environment-name', $configuration->get('environmentName'));
 
 		return $doc->asXML();
     }
