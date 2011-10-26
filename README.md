@@ -9,7 +9,8 @@ Exception Handler Example
 The preferred method for this to be used is via error and exception handlers, so that you do not have to manually call the configuration and client class every time. This is simply done by calling up the built in error handler and passing in your API key to its start() method like so:
 
 ```php
-require 'src/Airbrake/EventHandler.php';
+<?php
+require_once 'php-airbrake/src/Airbrake/EventHandler.php';
 Airbrake\EventHandler::start('[your api key]');
 ```
 
@@ -21,8 +22,9 @@ Basic Usage Example
 If calling the class directly and not through an exception handler, it would be done like this:
 
 ```php
-require_once 'src/Airbrake/Client.php';
-require_once 'src/Airbrake/Configuration.php';
+<?php
+require_once 'php-airbrake/src/Airbrake/Client.php';
+require_once 'php-airbrake/src/Airbrake/Configuration.php';
 
 $apiKey  = '[your api key]'; // This is required
 $options = array(); // This is optional
@@ -44,6 +46,30 @@ try {
 
 The options array may be filled with data from the Configuration Options section, if you would like to override some of the default options. Otherwise, it can be ignored.
 
+Using Resque
+============
+
+_This section assumes you are using the [PHP-Resque](https://github.com/chrisboulton/php-resque) project from [Chris Boulton](https://github.com/chrisboulton)._
+
+In order to speed up polling time, it may be desirable to pair Airbrake with a Resque queue. In order to do this, you must simply include Resque in your project and pass in the queue option.
+
+```php
+<?php
+
+require_once 'php-airbrake/src/Airbrake/EventHandler.php';
+require_once 'php-resque/lib/Resque.php';
+
+Airbrake\EventHandler::start('[your api key]', true, array('queue' => 'airbrake'));
+```
+
+In order to start the requested queue, simply run this command.
+
+```
+QUEUE=airbrake APP_INCLUDE=php-airbrake/src/Airbrake/Client.php php php-resque/resque.php
+```
+
+This will start the queue running properly.
+
 Configuration Options
 =====================
 
@@ -58,3 +84,4 @@ Configuration Options
 - **projectRoot** - Defaults to the Document Root. May need to change based on the context of your application.
 - **url** - The main URL that was requested.
 - **hostname** - The hostname that was requested.
+- **queue** - Optional - the name of the Resque queue to use.

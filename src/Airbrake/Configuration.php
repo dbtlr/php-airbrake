@@ -29,6 +29,7 @@ class Configuration extends Record
     protected $_projectRoot;
     protected $_url;
     protected $_hostname;
+    protected $_queue;
     
     /**
      * Load the given data array to the record.

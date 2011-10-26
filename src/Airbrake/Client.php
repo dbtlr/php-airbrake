@@ -3,12 +3,13 @@ namespace Airbrake;
 
 use Exception;
 
-require_once 'Record.php';
-require_once 'Configuration.php';
-require_once 'Connection.php';
-require_once 'Version.php';
-require_once 'Exception.php';
-require_once 'Notice.php';
+require_once realpath(__DIR__.'/Record.php');
+require_once realpath(__DIR__.'/Configuration.php');
+require_once realpath(__DIR__.'/Connection.php');
+require_once realpath(__DIR__.'/Version.php');
+require_once realpath(__DIR__.'/Exception.php');
+require_once realpath(__DIR__.'/Notice.php');
+require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
  * Airbrake client class.
@@ -20,6 +21,7 @@ require_once 'Notice.php';
  */
 class Client
 {
+    protected $configuration = null;
     protected $connection = null;
     protected $notice = null;
 
@@ -33,9 +35,10 @@ class Client
     {
         $configuration->verify();
 
-        $this->connection = new Connection($configuration);       
+        $this->configuration = $configuration;
+        $this->connection    = new Connection($configuration);       
     }
-    
+
     /**
      * Notify on an error message.
      *
@@ -56,9 +59,9 @@ class Client
             'errorMessage' => $message,
         ));
 
-        return $this->connection->send($notice);
+        return $this->notify($notice);
     }
-    
+
     /**
      * Notify on an exception
      *
@@ -75,8 +78,24 @@ class Client
             'errorMessage' => $exception->getMessage(),
         ));
 
+        return $this->notify($notice);
+    }
+
+    /**
+     * Notify about the notice.
+     *
+     * If there is a PHP Resque client given in the configuration, then use that to queue up a job to 
+     * send this out later. This should help speed up operations.
+     *
+     * @param Airbrake\Notice $notice
+     */
+    public function notify(Notice $notice)
+    {
+        if (class_exists('Resque') && $this->configuration->queue) {
+            $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
+            \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
+        }
+
         return $this->connection->send($notice);
     }
-    
-
 }
