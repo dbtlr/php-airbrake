@@ -13,11 +13,6 @@ use SimpleXMLElement;
  */
 class Notice extends Record
 {
-    /**
-     * The exception that caused this notice, if any.
-     */
-    protected $_exception = null;
-
     /** 
      * The backtrace from the given exception or hash.
      */

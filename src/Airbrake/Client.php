@@ -72,9 +72,8 @@ class Client
     {
         $notice = new Notice;
         $notice->load(array(
-            'exception'    => $exception,
             'errorClass'   => get_class($exception),
-            'backtrace'    => $exception->getTrace() ?: debug_backtrace(),
+            'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
             'errorMessage' => $exception->getMessage(),
         ));
 
@@ -92,11 +91,27 @@ class Client
     public function notify(Notice $notice)
     {
         if (class_exists('Resque') && $this->configuration->queue) {
+            //print_r($notice);exit;
             $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
             \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
             return;
         }
 
         return $this->connection->send($notice);
+    }
+
+    /**
+     * Clean the backtrace of unneeded junk.
+     *
+     * @param array $backtrace
+     * @return array
+     */
+    protected function cleanBacktrace($backtrace)
+    {
+        foreach ($backtrace as &$item) {
+            unset($item['args']);
+        }
+
+        return $backtrace;
     }
 }
