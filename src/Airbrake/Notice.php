@@ -93,8 +93,10 @@ class Notice extends Record
             if (is_array($value) || is_object($value)) {
                 $value = json_encode((array) $value);
             }
-
-            $node->addChild('var', $value)->addAttribute('key', $key);
+            
+            // htmlspecialchars() is needed to prevent html characters from breaking the node.
+            $node->addChild('var', htmlspecialchars($value))
+                 ->addAttribute('key', $key);
         }
     }
 }
