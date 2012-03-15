@@ -36,22 +36,25 @@ class Client
         $configuration->verify();
 
         $this->configuration = $configuration;
-        $this->connection    = new Connection($configuration);       
+        $this->connection    = new Connection($configuration);
     }
 
     /**
      * Notify on an error message.
      *
      * @param string $message
+     * @param array $backtrace
 	 * @return string
      */
-    public function notifyOnError($message)
+    public function notifyOnError($message, array $backtrace = null)
     {
-        $backtrace = debug_backtrace();
-        if (count($backtrace) > 1) {
-            array_shift($backtrace);
+        if (!$backtrace) {
+            $backtrace = debug_backtrace();
+            if (count($backtrace) > 1) {
+                array_shift($backtrace);
+            }
         }
-        
+
         $notice = new Notice;
         $notice->load(array(
             'errorClass'   => 'PHP Error',
@@ -83,7 +86,7 @@ class Client
     /**
      * Notify about the notice.
      *
-     * If there is a PHP Resque client given in the configuration, then use that to queue up a job to 
+     * If there is a PHP Resque client given in the configuration, then use that to queue up a job to
      * send this out later. This should help speed up operations.
      *
      * @param Airbrake\Notice $notice
