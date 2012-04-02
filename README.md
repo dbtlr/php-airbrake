@@ -3,6 +3,28 @@ PHP Airbrake
 
 A PHP module to make use of the [Airbrake API](http://help.airbrake.io/kb/api-2/api-overview) for storing error messages. This is based loosely on the [official Ruby implementation](https://github.com/airbrake/airbrake) from the Airbrake team.
 
+Installation
+============
+
+The best way to install the library is by using [Composer](http://getcomposer.org). Add the following to `composer.json` in the root of your project:
+
+``` javascript
+{ 
+    "require": {
+        "nodrew/php-airbrake": "*"
+    }
+}
+```
+
+Then, on the command line:
+
+``` bash
+curl -s http://getcomposer.org/installer | php
+php composer.phar install
+```
+
+Use the generated `vendor/.composer/autoload.php` file to autoload the library classes.
+
 Exception Handler Example
 =========================
 
