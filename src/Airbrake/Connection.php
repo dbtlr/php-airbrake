@@ -59,7 +59,6 @@ class Connection
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
         $return = curl_exec($curl);
-        var_dump($return);
 		curl_close($curl);
 
 		return $return;
