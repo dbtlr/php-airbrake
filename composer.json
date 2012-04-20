@@ -1,0 +1,23 @@
+{
+    "name": "nodrew/php-airbrake",
+    "type": "library",
+    "description": "A PHP module to make use of the Airbrake API for storing error messages.",
+    "keywords": ["airbrake", "exceptions", "errors", "logging"],
+    "homepage": "https://github.com/nodrew/php-airbrake",
+    "license": "MIT",
+    "authors": [{
+        "name": "Drew Butler",
+        "email": "drew@abstracting.me",
+        "homepage": "http://about.me/drew.butler"
+    }],
+
+    "require": {
+        "php": ">=5.3.1"
+    },
+
+    "autoload": {
+        "psr-0": {
+            "Airbrake": "src/"
+        }
+    }
+}
