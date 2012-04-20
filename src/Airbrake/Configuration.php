@@ -30,7 +30,8 @@ class Configuration extends Record
     protected $_url;
     protected $_hostname;
     protected $_queue;
-    
+    protected $_apiEndPoint  = 'http://airbrakeapp.com/notifier_api/v2/notices';
+
     /**
      * Load the given data array to the record.
      *
@@ -40,10 +41,9 @@ class Configuration extends Record
     public function __construct($apiKey, $data = array())
     {
         $data['apiKey'] = $apiKey;
-
         parent::__construct($data);
     }
-    
+
     /**
      * Initialize the data source.
      */
@@ -58,11 +58,11 @@ class Configuration extends Record
         if (!$this->postData) {
             $this->postData = (array) $_POST;
         }
-        
+
         if (!$this->sessionData && isset($_SESSION)) {
             $this->sessionData = (array) $_SESSION;
         }
-  
+
         if (!$this->projectRoot) {
             $this->projectRoot = isset($this->serverData['_']) ? $this->serverData['_'] : $this->serverData['DOCUMENT_ROOT'];
         }
@@ -73,9 +73,9 @@ class Configuration extends Record
 
         if (!$this->hostname) {
             $this->hostname = isset($this->serverData['HTTP_HOST']) ? $this->serverData['HTTP_HOST'] : 'No Host';
-        }        
+        }
     }
-    
+
     /**
      * Get the combined server parameters.
      *
@@ -85,7 +85,7 @@ class Configuration extends Record
     {
         return array_merge($this->get('postData'), $this->get('getData'));
     }
-    
+
     /**
      * Verify that the configuration is complete.
      */
