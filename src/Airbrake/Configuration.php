@@ -30,7 +30,7 @@ class Configuration extends Record
     protected $_url;
     protected $_hostname;
     protected $_queue;
-    protected $_apiEndPoint  = 'http://airbrakeapp.com/notifier_api/v2/notices';
+    protected $_apiEndPoint  = 'http://api.airbrake.io/notifier_api/v2/notices';
 
     /**
      * Load the given data array to the record.
