@@ -141,7 +141,7 @@ class EventHandler
     /**
      * Handles the PHP shutdown event.
      *
-     * This event exists almost soley to provide a means to catch and log errors that might have been
+     * This event exists almost solely to provide a means to catch and log errors that might have been
      * otherwise lost when PHP decided to die unexpectedly.
      */
     public function onShutdown()
@@ -151,8 +151,8 @@ class EventHandler
             return;
         }
 
-        // This will help prevent multiple calls to this, incase the shutdown handler was declared
-        // multiple times. This only should occur in unit tests, when the handlers are created
+        // This will help prevent multiple calls to this, in case the shutdown handler was declared
+        // multiple times. This should only occur in unit tests, when the handlers are created
         // and removed repeatedly. As we cannot remove shutdown handlers, this prevents us from
         // calling it 1000 times at the end.
         self::$instance = null;
