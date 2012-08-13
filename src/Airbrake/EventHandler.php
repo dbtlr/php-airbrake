@@ -39,12 +39,12 @@ class EventHandler
                                      \E_WARNING           => 'Warning',
                                      \E_USER_ERROR        => 'User Error',
                                      \E_RECOVERABLE_ERROR => 'Recoverable Error' );
-    
+
     /**
      * Build with the Airbrake client class.
      *
      * @param Airbrake\Client $client
-     */                              
+     */
     public function __construct(Client $client, $notifyOnWarning)
     {
         $this->notifyOnWarning = $notifyOnWarning;
@@ -63,10 +63,10 @@ class EventHandler
     {
         if ( !isset(self::$instance)) {
             $config = new Configuration($apiKey, $options);
-    
+
             $client = new Client($config);
             self::$instance = new self($client, $notifyOnWarning);
-    
+
             set_error_handler(array(self::$instance, 'onError'));
             set_exception_handler(array(self::$instance, 'onException'));
             register_shutdown_function(array(self::$instance, 'onShutdown'));
@@ -88,7 +88,7 @@ class EventHandler
 
         self::$instance = null;
     }
- 
+
     /**
      * Catches standard PHP style errors
      *
@@ -137,7 +137,7 @@ class EventHandler
 
         return true;
     }
-    
+
     /**
      * Handles the PHP shutdown event.
      *
