@@ -157,7 +157,7 @@ class EventHandler
         // calling it 1000 times at the end.
         self::$instance = null;
 
-        if (!$error = error_get_last() || !($error['type'] & error_reporting())) {
+        if (!($error = error_get_last()) || !($error['type'] & error_reporting())) {
             // There was no last error, or it is not of a type that we report
             return;
         }
