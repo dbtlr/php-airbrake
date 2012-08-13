@@ -162,11 +162,9 @@ class EventHandler
             return;
         }
 
-        $message = 'It looks like we may have shutdown unexpectedly. Here is the error '
-                 . 'we saw while closing up: %s  File: %s  Line: %i';
-
-        $message = sprintf($message, $error['message'], $error['file'], $error['line']);
-
-        $this->airbrakeClient->notifyOnError($message);
+        $this->airbrakeClient->notifyOnError(
+            sprintf(
+                'Unexpected shutdown. Error: %s  File: %s  Line: %i',
+                $error['message'], $error['file'], $error['line']));
     }
 }
