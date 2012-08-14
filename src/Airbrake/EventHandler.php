@@ -115,7 +115,7 @@ class EventHandler
         }
 
         if ($this->notifyOnWarning && isset ( $this->warningErrors[$type])) {
-            $message = sprintf('A PHP earning occurred (%s). %s', $this->warningErrors[$type], $message);
+            $message = sprintf('A PHP warning occurred (%s). %s', $this->warningErrors[$type], $message);
             $this->airbrakeClient->notifyOnError($message);
             return true;
         }
