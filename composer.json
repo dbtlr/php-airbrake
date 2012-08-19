@@ -1,5 +1,6 @@
 {
     "name": "airbrake/php-airbrake",
+    "version":"1.0.0",
     "type": "library",
     "description": "A PHP 5.3 library for sending errors to the Airbrake.io service.",
     "keywords": ["airbrake", "exceptions", "errors", "logging"],
