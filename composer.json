@@ -1,14 +1,14 @@
 {
-    "name": "nodrew/php-airbrake",
+    "name": "airbrake/php-airbrake",
     "type": "library",
     "description": "A PHP 5.3 library for sending errors to the Airbrake.io service.",
     "keywords": ["airbrake", "exceptions", "errors", "logging"],
-    "homepage": "https://github.com/nodrew/php-airbrake",
+    "homepage": "https://github.com/airbrake/php-airbrake",
     "license": "MIT",
     "authors": [{
-        "name": "Drew Butler",
-        "email": "hi@nodrew.com",
-        "homepage": "http://www.nodrew.com"
+        "name": "Airbrake",
+        "email": "support@airbrake.io",
+        "homepage": "http://airbrake.io"
     }],
 
     "require": {
