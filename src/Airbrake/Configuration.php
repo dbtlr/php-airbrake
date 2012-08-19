@@ -11,9 +11,6 @@ use Airbrake\Exception as AirbrakeException;
  * Loads via the inherited Record class methods.
  *
  * @package		Airbrake
- * @author		Drew Butler <drew@abstracting.me>
- * @copyright	(c) 2011 Drew Butler
- * @license		http://www.opensource.org/licenses/mit-license.php
  */
 class Configuration extends Record
 {
