@@ -90,7 +90,7 @@ class Client
      */
     public function notify(Notice $notice)
     {
-        if (class_exists('Resque') && $this->configuration->queue) {
+        if ($this->configuration->queue && class_exists('Resque') ) {
             //print_r($notice);exit;
             $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
             \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
