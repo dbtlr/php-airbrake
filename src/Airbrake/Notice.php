@@ -36,6 +36,7 @@ class Notice extends Record
      */
     public function toXml(Configuration $configuration)
     {
+        // doc @ http://help.airbrake.io/kb/api-2/notifier-api-version-22
         $doc = new SimpleXMLElement('<notice />');
         $doc->addAttribute('version', Version::API);
         $doc->addChild('api-key', $configuration->get('apiKey'));
@@ -68,7 +69,7 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', $configuration->getParamters());
+        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), $this->additionalParams()));
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 
@@ -98,5 +99,12 @@ class Notice extends Record
             $node->addChild('var', htmlspecialchars($value))
                  ->addAttribute('key', $key);
         }
+    }
+
+    private function additionalParams() {
+        return array(
+            'hostName'   => gethostname(),
+            'serverName' => isset($_SERVER['SERVER_NAME'])? $_SERVER['SERVER_NAME'] : 'undefined'
+        );
     }
 }

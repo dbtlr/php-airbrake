@@ -76,7 +76,7 @@ class Client
         $notice = new Notice;
         $notice->load(array(
             'errorClass'   => get_class($exception),
-            'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
+            'backtrace'    => $exception->getTrace() ?: debug_backtrace(), // used to call $this->cleanBacktrace, but I for one don't think function args are "useless junk" in a BT...?
             'errorMessage' => $exception->getMessage(),
         ));
 
