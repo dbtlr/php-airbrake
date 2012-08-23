@@ -39,12 +39,12 @@ class EventHandler
                                      \E_WARNING           => 'Warning',
                                      \E_USER_ERROR        => 'User Error',
                                      \E_RECOVERABLE_ERROR => 'Recoverable Error' );
-    
+
     /**
      * Build with the Airbrake client class.
      *
      * @param Airbrake\Client $client
-     */                              
+     */
     public function __construct(Client $client, $notifyOnWarning)
     {
         $this->notifyOnWarning = $notifyOnWarning;
@@ -63,10 +63,10 @@ class EventHandler
     {
         if ( !isset(self::$instance)) {
             $config = new Configuration($apiKey, $options);
-    
+
             $client = new Client($config);
             self::$instance = new self($client, $notifyOnWarning);
-    
+
             set_error_handler(array(self::$instance, 'onError'));
             set_exception_handler(array(self::$instance, 'onException'));
             register_shutdown_function(array(self::$instance, 'onShutdown'));
@@ -88,7 +88,7 @@ class EventHandler
 
         self::$instance = null;
     }
- 
+
     /**
      * Catches standard PHP style errors
      *
@@ -137,11 +137,11 @@ class EventHandler
 
         return true;
     }
-    
+
     /**
      * Handles the PHP shutdown event.
      *
-     * This event exists almost soley to provide a means to catch and log errors that might have been
+     * This event exists almost solely to provide a means to catch and log errors that might have been
      * otherwise lost when PHP decided to die unexpectedly.
      */
     public function onShutdown()
@@ -151,22 +151,22 @@ class EventHandler
             return;
         }
 
-        // This will help prevent multiple calls to this, incase the shutdown handler was declared
-        // multiple times. This only should occur in unit tests, when the handlers are created
+        // This will help prevent multiple calls to this, in case the shutdown handler was declared
+        // multiple times. This should only occur in unit tests, when the handlers are created
         // and removed repeatedly. As we cannot remove shutdown handlers, this prevents us from
         // calling it 1000 times at the end.
         self::$instance = null;
 
-        // Get the last error if there was one, if not, let's get out of here.
-        if (!$error = error_get_last()) {
+        $error = error_get_last();
+
+        if (!$error || !($error['type'] & error_reporting())) {
+            // There was no last error, or it is not of a type that we report
             return;
         }
 
-        $message = 'It looks like we may have shutdown unexpectedly. Here is the error '
-                 . 'we saw while closing up: %s  File: %s  Line: %i';
-
-        $message = sprintf($message, $error['message'], $error['file'], $error['line']);
-
-        $this->airbrakeClient->notifyOnError($message);
+        $this->airbrakeClient->notifyOnError(
+            sprintf(
+                'Unexpected shutdown. Error: %s  File: %s  Line: %i',
+                $error['message'], $error['file'], $error['line']));
     }
 }

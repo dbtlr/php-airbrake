@@ -81,7 +81,7 @@ class Configuration extends Record
      *
      * @return array
      */
-    public function getParamters()
+    public function getParameters()
     {
         return array_merge($this->get('postData'), $this->get('getData'));
     }
@@ -92,7 +92,8 @@ class Configuration extends Record
     public function verify()
     {
         if (!$this->apiKey) {
-            throw new AirbrakeException('Cannot initialize the Airbrake client without an ApiKey being set to the configuration.');
+            throw new AirbrakeException(
+                'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
         }
     }
 }

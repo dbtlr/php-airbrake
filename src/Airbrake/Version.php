@@ -14,5 +14,5 @@ class Version
 	const NAME    = 'nodrew-php-airbrake';
 	const NUMBER  = '1.0';
 	const APP_URL = 'https://github.com/nodrew/php-airbrake';
-	const API     = '2.0';
+	const API     = '2.2'; // see http://help.airbrake.io/kb/api-2/notifier-api-version-22
 }
