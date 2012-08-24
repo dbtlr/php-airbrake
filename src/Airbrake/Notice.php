@@ -3,6 +3,8 @@ namespace Airbrake;
 
 use SimpleXMLElement;
 
+require_once 'XMLValidator.php';
+
 /**
  * Airbrake notice class.
  *
@@ -30,13 +32,13 @@ class Notice extends Record
 
     /**
      * Convert the notice to xml
-     *
+     * see doc @ http://help.airbrake.io/kb/api-2/notifier-api-version-22
+     * 
      * @param Airbrake\Configuration $configuration
      * @return string
      */
     public function toXml(Configuration $configuration)
     {
-        // doc @ http://help.airbrake.io/kb/api-2/notifier-api-version-22
         $doc = new SimpleXMLElement('<notice />');
         $doc->addAttribute('version', Version::API);
         $doc->addChild('api-key', $configuration->get('apiKey'));
@@ -54,6 +56,7 @@ class Notice extends Record
         $error->addChild('class', $this->errorClass);
         $error->addChild('message', $this->errorMessage);
 
+
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
             foreach ($this->backtrace as $entry) {
@@ -69,7 +72,7 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), $this->additionalParams()));
+        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), $configuration->getAdditionalParams()));
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 
@@ -101,10 +104,4 @@ class Notice extends Record
         }
     }
 
-    private function additionalParams() {
-        return array(
-            'hostName'   => gethostname(),
-            'serverName' => isset($_SERVER['SERVER_NAME'])? $_SERVER['SERVER_NAME'] : 'undefined'
-        );
-    }
 }

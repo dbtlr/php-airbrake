@@ -31,6 +31,7 @@ class Configuration extends Record
     protected $_hostname;
     protected $_queue;
     protected $_apiEndPoint  = 'http://api.airbrake.io/notifier_api/v2/notices';
+    protected $_additionalParams = array();
 
     /**
      * Load the given data array to the record.
@@ -46,6 +47,7 @@ class Configuration extends Record
 
     /**
      * Initialize the data source.
+     * put any additional params you'd like to be included in the Airbrake record in the 'additionalParams' key
      */
     protected function initialize()
     {
@@ -96,4 +98,16 @@ class Configuration extends Record
                 'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
         }
     }
+
+    public function getAdditionalParams()
+    {
+        return $this->get('additionalParams');
+    }
+
+    public function addAdditionalParam($key, $value)
+    {
+        $params = $this->getAdditionalParams();
+        $params[$key] = $value;
+    }
+
 }

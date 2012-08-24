@@ -166,7 +166,15 @@ class EventHandler
 
         $this->airbrakeClient->notifyOnError(
             sprintf(
-                'Unexpected shutdown. Error: %s  File: %s  Line: %i',
+                'Unexpected shutdown. Error: %s  File: %s  Line: %s',
                 $error['message'], $error['file'], $error['line']));
     }
+
+    public static function getClient()
+    {
+        if (self::$instance == null)
+            return null;
+        return self::$instance->airbrakeClient;
+    }
+
 }
