@@ -34,7 +34,7 @@ class XMLValidator
         $result = '';
         $errors = libxml_get_errors();
         foreach ($errors as $error) {
-            $result .= $this->prettyPrintXMLValidationError($error);
+            $result .= self::prettyPrintXMLValidationError($error);
         }
         return $result;
     }
