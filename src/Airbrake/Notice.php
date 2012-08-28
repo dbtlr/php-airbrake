@@ -54,8 +54,11 @@ class Notice extends Record
 
         $error = $doc->addChild('error');
         $error->addChild('class', $this->errorClass);
-        $error->addChild('message', $this->errorMessage);
-
+        $errorPrefix = null;
+        if ($configuration->get('errorPrefix')) {
+            $errorPrefix = $configuration->get('errorPrefix').' - ';
+        }
+        $error->addChild('message', ($errorPrefix ?: '').$this->errorMessage);
 
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');

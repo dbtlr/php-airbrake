@@ -11,5 +11,17 @@ namespace Airbrake;
  */
 class Exception extends \Exception 
 {
-    
+    // a string to put in an email subject line
+    private $shortDescription = null;
+
+    public function setShortDescription($s)
+    {
+        $this->shortDescription = $s;
+    }
+
+    public function getShortDescription()
+    {
+        return $this->shortDescription;
+    }
+
 }

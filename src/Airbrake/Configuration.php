@@ -19,7 +19,7 @@ class Configuration extends Record
 {
     protected $_apiKey;
     protected $_timeout = 2;
-    protected $_environmentName = 'production';
+    protected $_environmentName = 'prod';
     protected $_serverData;
     protected $_getData;
     protected $_postData;
@@ -31,7 +31,10 @@ class Configuration extends Record
     protected $_hostname;
     protected $_queue;
     protected $_apiEndPoint  = 'http://api.airbrake.io/notifier_api/v2/notices';
-    protected $_additionalParams = array();
+    protected $_additionalParams = array(); // any additional params to pass to Airbrake
+    protected $_validateXML = false; // set to true to validate the generated XML against a XSD file (see the XML validation class)
+    protected $_errorPrefix = null; // appended to all reports' titles
+    protected $_handleTransparently = false; // if true, it handles events transparently (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
 
     /**
      * Load the given data array to the record.

@@ -1,6 +1,8 @@
 <?php
 namespace Airbrake;
 
+use Airbrake\Exception as AirbrakeException;
+
 /**
  * Airbrake connection class.
  *
@@ -52,16 +54,6 @@ class Connection
 
         $xml = $notice->toXml($this->configuration);
 
-        // if we asked to validate the XML, then do so
-        if ($validateXml || \sfConfig::get('sf_airbrake_validate_xml')) {
-
-            if (!XMLValidator::validateXML($xml)) {
-                $this->sendEmail('Airbrake warning : XML validating failed',
-                    "Validation errors:\n".XMLValidator::prettyPrintXMLValidationErrors().
-                    "\nwhen validating the following XML:\n$xml\nagainst XSD schema file ".self::XSD_SCHEMA_FILE);
-            }
-        }
-
 		curl_setopt($curl, CURLOPT_URL, $this->configuration->apiEndPoint);
 		curl_setopt($curl, CURLOPT_POST, 1);
 		curl_setopt($curl, CURLOPT_HEADER, 0);
@@ -75,23 +67,25 @@ class Connection
         // check there was no error, and spam the tech team if there was one
         $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         if ($response_status != 200) {
-            $this->sendEmail('Aibrake critical error when posting a report',
-                "HTTP response status: $response_status\n\nResponse: $return\n\nOriginal XML sent: $xml");
+            $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $return\n\nOriginal XML sent: $xml");
+            $exception->setShortDescription('Aibrake critical error when posting a report');
+            throw $exception;
         }
 
 		curl_close($curl);
 
+        // if we asked to validate the XML, then do so
+        if ( ($validateXml ||
+            ($this->configuration && $this->configuration->get('validateXML')) )
+            && !XMLValidator::validateXML($xml)) {
+
+            $exception = new AirbrakeException("Validation errors:\n".XMLValidator::prettyPrintXMLValidationErrors().
+                "\nwhen validating the following XML:\n$xml\nagainst XSD schema file ".XMLValidator::XSD_SCHEMA_FILE);
+            $exception->setShortDescription('Airbrake warning : XML validating failed');
+            throw $exception;
+        }
+
 		return $return;
 	}
-
-    private function sendEmail($subject, $body)
-    {
-        \sfContext::getInstance()->getMailer()->composeAndSend(
-            array(\sfConfig::get('sf_logger_email') => \sfConfig::get('sf_app').' - airbrake'),
-            (\sfConfig::get('sf_environment') == 'dev')? \sfConfig::get('sf_dev_email') : \sfConfig::get('sf_logger_email'),
-            $subject,
-            $body
-        );
-    }
 
 }
