@@ -74,9 +74,20 @@ class Client
     public function notifyOnException(Exception $exception)
     {
         $notice = new Notice;
+
+        // add the actual file/line # of the error as the first item of the backtrace
+        $backtrace = array(
+            array(
+                'file' => $exception->getFile(),
+                'line' => $exception->getLine()
+            )
+        );
+
+        $backtrace = array_merge($backtrace,
+            $exception->getTrace() ?: debug_backtrace());
         $notice->load(array(
             'errorClass'   => get_class($exception),
-            'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
+            'backtrace'    => $backtrace,
             'errorMessage' => $exception->getMessage(),
         ));
 
@@ -103,18 +114,9 @@ class Client
         return $this->connection->send($notice);
     }
 
-    /**
-     * Clean the backtrace of unneeded junk.
-     *
-     * @param array $backtrace
-     * @return array
-     */
-    protected function cleanBacktrace($backtrace)
+    public function getConfiguration()
     {
-        foreach ($backtrace as &$item) {
-            unset($item['args']);
-        }
-
-        return $backtrace;
+        return $this->configuration;
     }
+
 }

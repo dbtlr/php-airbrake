@@ -19,7 +19,7 @@ class Configuration extends Record
 {
     protected $_apiKey;
     protected $_timeout = 2;
-    protected $_environmentName = 'production';
+    protected $_environmentName = 'prod';
     protected $_serverData;
     protected $_getData;
     protected $_postData;
@@ -31,6 +31,10 @@ class Configuration extends Record
     protected $_hostname;
     protected $_queue;
     protected $_apiEndPoint  = 'http://api.airbrake.io/notifier_api/v2/notices';
+    protected $_additionalParams = array(); // any additional params to pass to Airbrake
+    protected $_validateXML = false; // set to true to validate the generated XML against a XSD file (see the XML validation class)
+    protected $_errorPrefix = null; // appended to all reports' titles
+    protected $_handleTransparently = false; // if true, it handles events transparently (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
 
     /**
      * Load the given data array to the record.
@@ -46,6 +50,7 @@ class Configuration extends Record
 
     /**
      * Initialize the data source.
+     * put any additional params you'd like to be included in the Airbrake record in the 'additionalParams' key
      */
     protected function initialize()
     {
@@ -81,7 +86,7 @@ class Configuration extends Record
      *
      * @return array
      */
-    public function getParamters()
+    public function getParameters()
     {
         return array_merge($this->get('postData'), $this->get('getData'));
     }
@@ -96,4 +101,16 @@ class Configuration extends Record
                 'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
         }
     }
+
+    public function getAdditionalParams()
+    {
+        return $this->get('additionalParams');
+    }
+
+    public function addAdditionalParam($key, $value)
+    {
+        $params = $this->getAdditionalParams();
+        $params[$key] = $value;
+    }
+
 }

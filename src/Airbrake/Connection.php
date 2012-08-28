@@ -1,6 +1,8 @@
 <?php
 namespace Airbrake;
 
+use Airbrake\Exception as AirbrakeException;
+
 /**
  * Airbrake connection class.
  *
@@ -42,9 +44,11 @@ class Connection
 
 	/**
 	 * @param Airbrake\Notice $notice
+     * @param[optional] bool $validateXml = false - If true, validates the generated XML against the XSD schema defined
+     *                                              in XSD_SCHEMA_FILE (if any error is found, it spams the tech team)
 	 * @return string
 	 **/
-	public function send(Notice $notice)
+	public function send(Notice $notice, $validateXml = false)
 	{
 		$curl = curl_init();
 
@@ -59,8 +63,29 @@ class Connection
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
         $return = curl_exec($curl);
+
+        // check there was no error, and spam the tech team if there was one
+        $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        if ($response_status != 200) {
+            $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $return\n\nOriginal XML sent: $xml");
+            $exception->setShortDescription('Aibrake critical error when posting a report');
+            throw $exception;
+        }
+
 		curl_close($curl);
+
+        // if we asked to validate the XML, then do so
+        if ( ($validateXml ||
+            ($this->configuration && $this->configuration->get('validateXML')) )
+            && !XMLValidator::validateXML($xml)) {
+
+            $exception = new AirbrakeException("Validation errors:\n".XMLValidator::prettyPrintXMLValidationErrors().
+                "\nwhen validating the following XML:\n$xml\nagainst XSD schema file ".XMLValidator::XSD_SCHEMA_FILE);
+            $exception->setShortDescription('Airbrake warning : XML validating failed');
+            throw $exception;
+        }
 
 		return $return;
 	}
+
 }

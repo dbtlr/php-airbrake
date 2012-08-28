@@ -39,6 +39,8 @@ class EventHandler
                                      \E_WARNING           => 'Warning',
                                      \E_USER_ERROR        => 'User Error',
                                      \E_RECOVERABLE_ERROR => 'Recoverable Error' );
+    // pointers to previous handler
+    private static $previousExceptionHandler = null;
 
     /**
      * Build with the Airbrake client class.
@@ -67,8 +69,29 @@ class EventHandler
             $client = new Client($config);
             self::$instance = new self($client, $notifyOnWarning);
 
-            set_error_handler(array(self::$instance, 'onError'));
-            set_exception_handler(array(self::$instance, 'onException'));
+            $transparent = $config->get('handleTransparently');
+
+            // errors
+            error_reporting(E_ALL);
+            set_error_handler(array(self::$instance, 'onError'), E_ALL);
+
+            // exceptions
+            if ($transparent) {
+                self::$previousExceptionHandler = set_exception_handler(function($exception) {
+                    // log into airbrake
+                    call_user_func_array(array(EventHandler::getInstance(), 'onException'),
+                        array($exception));
+
+                    // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
+                    EventHandler::reset(false);
+                    throw $exception;
+                });
+            } else {
+                // catch everything, don't re-throw
+                set_exception_handler(array(self::$instance, 'onException'));
+            }
+
+            // fatal errors
             register_shutdown_function(array(self::$instance, 'onShutdown'));
         }
 
@@ -79,9 +102,9 @@ class EventHandler
     /**
      * Revert the handlers back to their original state.
      */
-    public static function reset()
+    public static function reset($restore = true)
     {
-        if (isset(self::$instance)) {
+        if (isset(self::$instance) && $restore) {
             restore_error_handler();
             restore_exception_handler();
         }
@@ -166,7 +189,26 @@ class EventHandler
 
         $this->airbrakeClient->notifyOnError(
             sprintf(
-                'Unexpected shutdown. Error: %s  File: %s  Line: %i',
+                'Unexpected shutdown. Error: %s  File: %s  Line: %d',
                 $error['message'], $error['file'], $error['line']));
     }
+
+    public static function getClient()
+    {
+        if (self::$instance == null) {
+            return null;
+        }
+        return self::$instance->airbrakeClient;
+    }
+
+    public static function getPreviousExceptionHandler()
+    {
+        return self::$previousExceptionHandler;
+    }
+
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
+
 }
