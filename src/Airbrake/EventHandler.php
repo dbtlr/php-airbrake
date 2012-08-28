@@ -39,7 +39,7 @@ class EventHandler
                                      \E_WARNING           => 'Warning',
                                      \E_USER_ERROR        => 'User Error',
                                      \E_RECOVERABLE_ERROR => 'Recoverable Error' );
-    // pointers to previous handlers
+    // pointers to previous handler
     private static $previousExceptionHandler = null;
 
     /**
