@@ -9,7 +9,7 @@ namespace Airbrake;
  * @copyright	(c) 2011 Drew Butler
  * @license		http://www.opensource.org/licenses/mit-license.php
  */
-class Exception extends \Exception 
+class AirbrakeException extends \Exception
 {
     // a string to put in an email subject line
     private $shortDescription = null;
