@@ -3,8 +3,8 @@ namespace Airbrake;
 
 use Airbrake\AirbrakeException as AirbrakeException;
 
-require_once 'Client.php';
-require_once 'Configuration.php';
+require_once 'Client.class.php';
+require_once 'Configuration.class.php';
 
 class InvalidHashException extends \Exception {}
 

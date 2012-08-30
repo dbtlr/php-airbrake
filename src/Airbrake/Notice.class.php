@@ -3,7 +3,7 @@ namespace Airbrake;
 
 use SimpleXMLElement;
 
-require_once 'XMLValidator.php';
+require_once 'XMLValidator.class.php';
 
 /**
  * Airbrake notice class.

@@ -1,7 +1,7 @@
 <?php
 namespace Airbrake;
 
-require_once 'Record.php';
+require_once 'Record.class.php';
 
 use Airbrake\AirbrakeException as AirbrakeException;
 

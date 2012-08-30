@@ -1,12 +1,12 @@
 <?php
 namespace Airbrake;
 
-require_once realpath(__DIR__.'/Record.php');
-require_once realpath(__DIR__.'/Configuration.php');
-require_once realpath(__DIR__.'/Connection.php');
-require_once realpath(__DIR__.'/Version.php');
-require_once realpath(__DIR__.'/AirbrakeException.php');
-require_once realpath(__DIR__.'/Notice.php');
+require_once realpath(__DIR__.'/Record.class.php');
+require_once realpath(__DIR__.'/Configuration.class.php');
+require_once realpath(__DIR__.'/Connection.class.php');
+require_once realpath(__DIR__.'/Version.class.php');
+require_once realpath(__DIR__.'/AirbrakeException.class.php');
+require_once realpath(__DIR__.'/Notice.class.php');
 require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
