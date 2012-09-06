@@ -1,9 +1,9 @@
 <?php
 namespace Airbrake;
 
-require_once 'Record.php';
+require_once 'Record.class.php';
 
-use Airbrake\Exception as AirbrakeException;
+use Airbrake\AirbrakeException as AirbrakeException;
 
 /**
  * Airbrake configuration class.
@@ -34,7 +34,8 @@ class Configuration extends Record
     protected $_additionalParams = array(); // any additional params to pass to Airbrake
     protected $_validateXML = false; // set to true to validate the generated XML against a XSD file (see the XML validation class)
     protected $_errorPrefix = null; // appended to all reports' titles
-    protected $_handleTransparently = false; // if true, it handles events transparently (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
+    protected $_handleSeamlessly = false; // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
+    protected $_errorReporting = E_ALL; // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
 
     /**
      * Load the given data array to the record.

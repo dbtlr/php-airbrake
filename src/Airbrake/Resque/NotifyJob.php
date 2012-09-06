@@ -1,7 +1,7 @@
 <?php
 namespace Airbrake\Resque;
 
-require_once realpath(__DIR__.'/../Client.php');
+require_once realpath(__DIR__.'/../Client.class.php');
 
 use Airbrake\Connection;
 

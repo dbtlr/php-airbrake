@@ -1,14 +1,12 @@
 <?php
 namespace Airbrake;
 
-use Exception;
-
-require_once realpath(__DIR__.'/Record.php');
-require_once realpath(__DIR__.'/Configuration.php');
-require_once realpath(__DIR__.'/Connection.php');
-require_once realpath(__DIR__.'/Version.php');
-require_once realpath(__DIR__.'/Exception.php');
-require_once realpath(__DIR__.'/Notice.php');
+require_once realpath(__DIR__.'/Record.class.php');
+require_once realpath(__DIR__.'/Configuration.class.php');
+require_once realpath(__DIR__.'/Connection.class.php');
+require_once realpath(__DIR__.'/Version.class.php');
+require_once realpath(__DIR__.'/AirbrakeException.class.php');
+require_once realpath(__DIR__.'/Notice.class.php');
 require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
@@ -28,7 +26,7 @@ class Client
     /**
      * Build the Client with the Airbrake Configuration.
      *
-     * @throws Airbrake\Exception
+     * @throws Airbrake\AirbrakeException
      * @param Configuration $configuration
      */
     public function __construct(Configuration $configuration)
@@ -46,8 +44,16 @@ class Client
      * @param array $backtrace
 	 * @return string
      */
-    public function notifyOnError($message, array $backtrace = null)
+    public function notifyOnError($message, $file, $line, array $backtrace = null)
     {
+        // add the actual file/line # of the error as the first item of the backtrace
+        $backtraceFirstLine = array(
+            array(
+                'file' => $file,
+                'line' => $line
+            )
+        );
+
         if (!$backtrace) {
             $backtrace = debug_backtrace();
             if (count($backtrace) > 1) {
@@ -58,7 +64,7 @@ class Client
         $notice = new Notice;
         $notice->load(array(
             'errorClass'   => 'PHP Error',
-            'backtrace'    => $backtrace,
+            'backtrace'    => array_merge($backtraceFirstLine, $backtrace),
             'errorMessage' => $message,
         ));
 
@@ -71,7 +77,7 @@ class Client
      * @param Airbrake\Notice $notice
 	 * @return string
      */
-    public function notifyOnException(Exception $exception)
+    public function notifyOnException(\Exception $exception)
     {
         $notice = new Notice;
 
@@ -88,7 +94,7 @@ class Client
         $notice->load(array(
             'errorClass'   => get_class($exception),
             'backtrace'    => $backtrace,
-            'errorMessage' => $exception->getMessage(),
+            'errorMessage' => 'Uncaught '.get_class($exception).' : '.$exception->getMessage(),
         ));
 
         return $this->notify($notice);
@@ -118,5 +124,4 @@ class Client
     {
         return $this->configuration;
     }
-
 }

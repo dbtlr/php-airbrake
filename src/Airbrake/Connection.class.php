@@ -1,7 +1,7 @@
 <?php
 namespace Airbrake;
 
-use Airbrake\Exception as AirbrakeException;
+use Airbrake\AirbrakeException as AirbrakeException;
 
 /**
  * Airbrake connection class.
@@ -61,11 +61,11 @@ class Connection
 		curl_setopt($curl, CURLOPT_POSTFIELDS, $xml);
 		curl_setopt($curl, CURLOPT_HTTPHEADER, $this->headers);
 		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-
         $return = curl_exec($curl);
 
         // check there was no error, and spam the tech team if there was one
         $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
         if ($response_status != 200) {
             $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $return\n\nOriginal XML sent: $xml");
             $exception->setShortDescription('Aibrake critical error when posting a report');

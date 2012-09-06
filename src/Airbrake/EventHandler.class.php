@@ -1,10 +1,12 @@
 <?php
 namespace Airbrake;
 
-use Exception;
+use Airbrake\AirbrakeException as AirbrakeException;
 
-require_once 'Client.php';
-require_once 'Configuration.php';
+require_once 'Client.class.php';
+require_once 'Configuration.class.php';
+
+class InvalidHashException extends \Exception {}
 
 /**
  * Airbrake EventHandler class.
@@ -22,25 +24,28 @@ class EventHandler
     protected static $instance = null;
     protected $airbrakeClient = null;
     protected $notifyOnWarning = null;
+    protected $configuration = null;
 
-    protected $warningErrors = array ( \E_NOTICE          => 'Notice',
-                                       \E_STRICT          => 'Strict',
-                                       \E_USER_WARNING    => 'User Warning',
-                                       \E_USER_NOTICE     => 'User Notice',
-                                       \E_DEPRECATED      => 'Deprecated',
-                                       \E_USER_DEPRECATED => 'User Deprecated',
-                                       \E_CORE_WARNING    => 'Core Warning' );
+    protected $errorNames = array ( \E_NOTICE            => 'Notice',
+                                    \E_STRICT            => 'Strict',
+                                    \E_USER_WARNING      => 'User Warning',
+                                    \E_USER_NOTICE       => 'User Notice',
+                                    \E_DEPRECATED        => 'Deprecated',
+                                    \E_USER_DEPRECATED   => 'User Deprecated',
+                                    \E_CORE_WARNING      => 'Core Warning',
+                                    \E_ERROR             => 'Error',
+                                    \E_PARSE             => 'Parse',
+                                    \E_COMPILE_WARNING   => 'Compile Warning',
+                                    \E_COMPILE_ERROR     => 'Compile Error',
+                                    \E_CORE_ERROR        => 'Core Error',
+                                    \E_WARNING           => 'Warning',
+                                    \E_USER_ERROR        => 'User Error',
+                                    \E_RECOVERABLE_ERROR => 'Recoverable Error' );
 
-    protected $fatalErrors = array ( \E_ERROR             => 'Error',
-                                     \E_PARSE             => 'Parse',
-                                     \E_COMPILE_WARNING   => 'Compile Warning',
-                                     \E_COMPILE_ERROR     => 'Compile Error',
-                                     \E_CORE_ERROR        => 'Core Error',
-                                     \E_WARNING           => 'Warning',
-                                     \E_USER_ERROR        => 'User Error',
-                                     \E_RECOVERABLE_ERROR => 'Recoverable Error' );
     // pointers to previous handler
     private static $previousExceptionHandler = null;
+    // an array containing the hashes of the handled errors to avoid reporting them again on shutdown
+    private $handledErrors;
 
     /**
      * Build with the Airbrake client class.
@@ -51,6 +56,8 @@ class EventHandler
     {
         $this->notifyOnWarning = $notifyOnWarning;
         $this->airbrakeClient = $client;
+
+        $this->handledErrors = array();
     }
 
     /**
@@ -68,23 +75,25 @@ class EventHandler
 
             $client = new Client($config);
             self::$instance = new self($client, $notifyOnWarning);
+            self::$instance->configuration = $config;
 
-            $transparent = $config->get('handleTransparently');
+            $seamless = $config->get('handleSeamlessly');
 
-            // errors
-            error_reporting(E_ALL);
+            // errors - handle them all!
             set_error_handler(array(self::$instance, 'onError'), E_ALL);
 
             // exceptions
-            if ($transparent) {
-                self::$previousExceptionHandler = set_exception_handler(function($exception) {
+            if ($seamless) {
+                self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) {
                     // log into airbrake
                     call_user_func_array(array(EventHandler::getInstance(), 'onException'),
                         array($exception));
 
-                    // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
-                    EventHandler::reset(false);
-                    throw $exception;
+                    if (!property_exists($exception, 'airbrakeDontRethrow')) {
+                        // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
+                        EventHandler::reset(false);
+                        throw $exception;
+                    }
                 });
             } else {
                 // catch everything, don't re-throw
@@ -125,25 +134,36 @@ class EventHandler
      */
     public function onError($type, $message, $file = null, $line = null, $context = null)
     {
+        // remember this error
+        try {
+            $this->handledErrors[$this->hashError($type, $message, $file, $line)] = true;
+        }
+        catch (InvalidHashException $e) {}
+
         // This will catch silenced @ function calls and keep them quiet.
         if (ini_get('error_reporting') == 0) {
             return true;
         }
 
+        // if the seamless mode is activated, return false to let the error bubble up
+        // otherwise, return true to stop it here (see set_error_handler doc)
+        // return false;
+        $result = !($this->configuration && $this->configuration->get('handleSeamlessly'));
+
+        // check whether we want to report this error
+        if ($this->configuration && $this->configuration->exists('errorReporting') &&
+            !($this->configuration->get('errorReporting') & $type))
+        {
+            return $result;
+        }
+
         $backtrace = debug_backtrace();
         array_shift( $backtrace );
 
-        if (isset($this->fatalErrors[$type])) {
-            throw new Exception(sprintf('A PHP error occurred (%s). %s', $this->fatalErrors[$type], $message));
-        }
+        $message = sprintf('A PHP error occurred (%s). %s', $this->errorNames[$type], $message);
+        $this->airbrakeClient->notifyOnError($message, $file, $line, $backtrace);
 
-        if ($this->notifyOnWarning && isset ( $this->warningErrors[$type])) {
-            $message = sprintf('A PHP earning occurred (%s). %s', $this->warningErrors[$type], $message);
-            $this->airbrakeClient->notifyOnError($message);
-            return true;
-        }
-
-        return true;
+        return $result;
     }
 
 
@@ -154,7 +174,7 @@ class EventHandler
      * @param Exception $exception
      * @return bool
      */
-    public function onException(Exception $exception)
+    public function onException(\Exception $exception)
     {
         $this->airbrakeClient->notifyOnException($exception);
 
@@ -182,15 +202,20 @@ class EventHandler
 
         $error = error_get_last();
 
-        if (!$error || !($error['type'] & error_reporting())) {
-            // There was no last error, or it is not of a type that we report
-            return;
+        // check if there is an error, if we report it, and if we haven't reported it yet!
+        try {
+            if (!$error || !($error['type'] & error_reporting())
+                || array_key_exists($this->hashError($error['type'], $error['message'], $error['file'], $error['line']), $this->handledErrors)) {
+                return;
+            }
         }
+        catch (InvalidHashException $e) {}
 
         $this->airbrakeClient->notifyOnError(
             sprintf(
                 'Unexpected shutdown. Error: %s  File: %s  Line: %d',
-                $error['message'], $error['file'], $error['line']));
+                $error['message'], $error['file'], $error['line']),
+            $error['file'], $error['line']);
     }
 
     public static function getClient()
@@ -209,6 +234,26 @@ class EventHandler
     public static function getInstance()
     {
         return self::$instance;
+    }
+
+    private function hashError($type, $message, $file, $line)
+    {
+        $hashedString = (string)$type;
+        $valid = false;
+        if (is_string($message) && strlen($message)) {
+            $valid = true;
+            $hashedString .= $message;
+        }
+        if (is_string($file) && strlen($file) > 0
+            && is_int($line) && $line > 0)
+        {
+            $valid = true;
+            $hashedString .= $file.$line;
+        }
+        if (!$valid) {
+            throw new InvalidHashException();
+        }
+        return hash('md5', $hashedString);
     }
 
 }
