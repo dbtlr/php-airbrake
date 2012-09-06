@@ -26,6 +26,11 @@ class EventHandler
     protected $notifyOnWarning = null;
     protected $configuration = null;
 
+    // minimal amount of memory needed to actually report fatal errors to Airbrake
+    // useful when reporting "out of memory" errors
+    // around 20M should be enough
+    private static $memoryAllowedOnShutdown = '40M';
+
     protected $errorNames = array ( \E_NOTICE            => 'Notice',
                                     \E_STRICT            => 'Strict',
                                     \E_USER_WARNING      => 'User Warning',
@@ -189,6 +194,16 @@ class EventHandler
      */
     public function onShutdown()
     {
+        // try to get some additional memory (useful when reporting "out of memory" errors)
+        try {
+            if (!ini_set('memory_limit', self::nbBytesStringToInt(self::$memoryAllowedOnShutdown) + self::nbBytesStringToInt(ini_get('memory_limit')))) {
+                // ini_set failed, just uncap memory altogether
+                ini_set('memory_limit', -1);
+            }
+        } catch(Exception $e) {
+            ini_set('memory_limit', -1);
+        }
+
         // If the instance was unset, then we shouldn't run.
         if (self::$instance == null) {
             return;
@@ -255,5 +270,28 @@ class EventHandler
         }
         return hash('md5', $hashedString);
     }
+
+    // converts a string of the form '10G' or '5T' or '8M' to the corresponding number of bytes
+    private static function nbBytesStringToInt($s)
+    {
+        return preg_replace_callback('/^(\d+)\s*(K|M|G|T)*$/i', function($matches) {
+            $n = (int) $matches[1];
+            if (count($matches) == 3) {
+                // i.e. there is a letter in the string
+                $u = strtolower($matches[2]);
+                switch ($u) {
+                    case 't':
+                        $n *= 1024; // PHP does use 1024, not 1000 (see http://www.php.net/manual/en/faq.using.php#faq.using.shorthandbytes)
+                    case 'g':
+                        $n *= 1024;
+                    case 'm':
+                        $n *= 1024;
+                    case 'k':
+                        $n *= 1024;
+                }
+            }
+            return $n;
+        }, (string) $s);
+}
 
 }
