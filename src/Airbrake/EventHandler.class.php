@@ -88,22 +88,24 @@ class EventHandler
             set_error_handler(array(self::$instance, 'onError'), E_ALL);
 
             // exceptions
-            if ($seamless) {
-                self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) {
-                    // log into airbrake
-                    call_user_func_array(array(EventHandler::getInstance(), 'onException'),
-                        array($exception));
+            self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) use($config) {
+                // log into airbrake
+                call_user_func_array(array(EventHandler::getInstance(), 'onException'),
+                    array($exception, $config));
 
-                    if (!property_exists($exception, 'airbrakeDontRethrow')) {
-                        // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
-                        EventHandler::reset(false);
+                if ($config->get('handleSeamlessly') && !property_exists($exception, 'airbrakeDontRethrow')) {
+                    // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
+                    EventHandler::reset(false);
+                    $previousHandler = EventHandler::getPreviousExceptionHandler();
+                    if ($previousHandler) {
+                        call_user_func_array($previousHandler, array($exception));
+                    }
+                    else {
+                        // no previous handler, just re-throw it
                         throw $exception;
                     }
-                });
-            } else {
-                // catch everything, don't re-throw
-                set_exception_handler(array(self::$instance, 'onException'));
-            }
+                }
+            });
 
             // fatal errors
             register_shutdown_function(array(self::$instance, 'onShutdown'));
@@ -177,11 +179,20 @@ class EventHandler
      *
      * @see http://us3.php.net/manual/en/function.set-exception-handler.php
      * @param Exception $exception
+     * @param[optional] Configuration $config = null
      * @return bool
      */
-    public function onException(\Exception $exception)
+    public function onException(\Exception $exception, Configuration $config = null)
     {
-        $this->airbrakeClient->notifyOnException($exception);
+        if ($config && in_array(get_class($exception),
+            $config->get('silentExceptionClasses'))) {
+            // mark it to leave it alone
+            $exception->airbrakeDontRethrow = true;
+        }
+        else {
+            // buisness as usual
+            $this->airbrakeClient->notifyOnException($exception);
+        }
 
         return true;
     }
