@@ -26,7 +26,7 @@ class EventHandler
     protected $notifyOnWarning = null;
     protected $configuration = null;
 
-    // minimal amount of memory needed to actually report fatal errors to Airbrake
+    // Minimum amount of memory required to actually report fatal errors to Airbrake
     // useful when reporting "out of memory" errors
     // around 20M should be enough
     private static $memoryAllowedOnShutdown = '40M';
@@ -88,19 +88,21 @@ class EventHandler
             set_error_handler(array(self::$instance, 'onError'), E_ALL);
 
             // exceptions
-            self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) use($config) {
+            self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) use($config)
+            {
                 // log into airbrake
-                call_user_func_array(array(EventHandler::getInstance(), 'onException'),
+                call_user_func_array(
+                    array(EventHandler::getInstance(), 'onException'),
                     array($exception, $config));
 
                 if ($config->get('handleSeamlessly') && !property_exists($exception, 'airbrakeDontRethrow')) {
-                    // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
+                    // then call the original handler
+                    // (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
                     EventHandler::reset(false);
                     $previousHandler = EventHandler::getPreviousExceptionHandler();
                     if ($previousHandler) {
                         call_user_func_array($previousHandler, array($exception));
-                    }
-                    else {
+                    } else {
                         // no previous handler, just re-throw it
                         throw $exception;
                     }
@@ -184,13 +186,13 @@ class EventHandler
      */
     public function onException(\Exception $exception, Configuration $config = null)
     {
-        if ($config && in_array(get_class($exception),
+        if ($config && in_array(
+            get_class($exception),
             $config->get('silentExceptionClasses'))) {
             // mark it to leave it alone
             $exception->airbrakeDontRethrow = true;
-        }
-        else {
-            // buisness as usual
+        } else {
+            // business as usual
             $this->airbrakeClient->notifyOnException($exception);
         }
 
@@ -207,7 +209,10 @@ class EventHandler
     {
         // try to get some additional memory (useful when reporting "out of memory" errors)
         try {
-            if (!ini_set('memory_limit', self::nbBytesStringToInt(self::$memoryAllowedOnShutdown) + self::nbBytesStringToInt(ini_get('memory_limit')))) {
+            if (!ini_set(
+                'memory_limit',
+                (int) (self::nbBytesStringToInt(self::$memoryAllowedOnShutdown)
+                    + self::nbBytesStringToInt(ini_get('memory_limit'))) )) {
                 // ini_set failed, just uncap memory altogether
                 ini_set('memory_limit', -1);
             }
@@ -292,7 +297,8 @@ class EventHandler
                 $u = strtolower($matches[2]);
                 switch ($u) {
                     case 't':
-                        $n *= 1024; // PHP does use 1024, not 1000 (see http://www.php.net/manual/en/faq.using.php#faq.using.shorthandbytes)
+                        // PHP does use 1024, not 1000 (see http://www.php.net/manual/en/faq.using.php#faq.using.shorthandbytes)
+                        $n *= 1024;
                     case 'g':
                         $n *= 1024;
                     case 'm':

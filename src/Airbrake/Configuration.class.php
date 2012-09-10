@@ -36,7 +36,7 @@ class Configuration extends Record
     protected $_errorPrefix            = null;    // appended to all reports' titles
     protected $_handleSeamlessly       = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
     protected $_errorReporting         = E_ALL;   // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
-    protected $_silentExceptionClasses = array(); // exception classes that won't be logged (nor re-thrown is the seamless mode is on)
+    protected $_silentExceptionClasses = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
 
     /**
      * Load the given data array to the record.
