@@ -288,6 +288,7 @@ class EventHandler
     }
 
     // converts a string of the form '10G' or '5T' or '8M' to the corresponding number of bytes
+    // TODO: if we need more helper functions around here, we should move them, including this one, to a separate file
     private static function nbBytesStringToInt($s)
     {
         return preg_replace_callback('/^(\d+)\s*(K|M|G|T)*$/i', function($matches) {
