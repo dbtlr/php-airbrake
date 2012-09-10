@@ -11,10 +11,10 @@ class InvalidHashException extends \Exception {}
 /**
  * Airbrake EventHandler class.
  *
- * @package		Airbrake
- * @author		Drew Butler <drew@abstracting.me>
- * @copyright	(c) 2011 Drew Butler
- * @license		http://www.opensource.org/licenses/mit-license.php
+ * @package        Airbrake
+ * @author         Drew Butler <drew@abstracting.me>
+ * @copyright      (c) 2011 Drew Butler
+ * @license        http://www.opensource.org/licenses/mit-license.php
  */
 class EventHandler
 {
@@ -25,6 +25,11 @@ class EventHandler
     protected $airbrakeClient = null;
     protected $notifyOnWarning = null;
     protected $configuration = null;
+
+    // Minimum amount of memory required to actually report fatal errors to Airbrake
+    // useful when reporting "out of memory" errors
+    // around 20M should be enough
+    private static $memoryAllowedOnShutdown = '40M';
 
     protected $errorNames = array ( \E_NOTICE            => 'Notice',
                                     \E_STRICT            => 'Strict',
@@ -83,22 +88,26 @@ class EventHandler
             set_error_handler(array(self::$instance, 'onError'), E_ALL);
 
             // exceptions
-            if ($seamless) {
-                self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) {
-                    // log into airbrake
-                    call_user_func_array(array(EventHandler::getInstance(), 'onException'),
-                        array($exception));
+            self::$previousExceptionHandler = set_exception_handler(function(\Exception $exception) use($config)
+            {
+                // log into airbrake
+                call_user_func_array(
+                    array(EventHandler::getInstance(), 'onException'),
+                    array($exception, $config));
 
-                    if (!property_exists($exception, 'airbrakeDontRethrow')) {
-                        // then call the original handler (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
-                        EventHandler::reset(false);
+                if ($config->get('handleSeamlessly') && !property_exists($exception, 'airbrakeDontRethrow')) {
+                    // then call the original handler
+                    // (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
+                    EventHandler::reset(false);
+                    $previousHandler = EventHandler::getPreviousExceptionHandler();
+                    if ($previousHandler) {
+                        call_user_func_array($previousHandler, array($exception));
+                    } else {
+                        // no previous handler, just re-throw it
                         throw $exception;
                     }
-                });
-            } else {
-                // catch everything, don't re-throw
-                set_exception_handler(array(self::$instance, 'onException'));
-            }
+                }
+            });
 
             // fatal errors
             register_shutdown_function(array(self::$instance, 'onShutdown'));
@@ -172,11 +181,20 @@ class EventHandler
      *
      * @see http://us3.php.net/manual/en/function.set-exception-handler.php
      * @param Exception $exception
+     * @param[optional] Configuration $config = null
      * @return bool
      */
-    public function onException(\Exception $exception)
+    public function onException(\Exception $exception, Configuration $config = null)
     {
-        $this->airbrakeClient->notifyOnException($exception);
+        if ($config && in_array(
+            get_class($exception),
+            $config->get('silentExceptionClasses'))) {
+            // mark it to leave it alone
+            $exception->airbrakeDontRethrow = true;
+        } else {
+            // business as usual
+            $this->airbrakeClient->notifyOnException($exception);
+        }
 
         return true;
     }
@@ -189,6 +207,19 @@ class EventHandler
      */
     public function onShutdown()
     {
+        // try to get some additional memory (useful when reporting "out of memory" errors)
+        try {
+            if (!ini_set(
+                'memory_limit',
+                (int) (self::nbBytesStringToInt(self::$memoryAllowedOnShutdown)
+                    + self::nbBytesStringToInt(ini_get('memory_limit'))) )) {
+                // ini_set failed, just uncap memory altogether
+                ini_set('memory_limit', -1);
+            }
+        } catch(Exception $e) {
+            ini_set('memory_limit', -1);
+        }
+
         // If the instance was unset, then we shouldn't run.
         if (self::$instance == null) {
             return;
@@ -255,5 +286,29 @@ class EventHandler
         }
         return hash('md5', $hashedString);
     }
+
+    // converts a string of the form '10G' or '5T' or '8M' to the corresponding number of bytes
+    private static function nbBytesStringToInt($s)
+    {
+        return preg_replace_callback('/^(\d+)\s*(K|M|G|T)*$/i', function($matches) {
+            $n = (int) $matches[1];
+            if (count($matches) == 3) {
+                // i.e. there is a letter in the string
+                $u = strtolower($matches[2]);
+                switch ($u) {
+                    case 't':
+                        // PHP does use 1024, not 1000 (see http://www.php.net/manual/en/faq.using.php#faq.using.shorthandbytes)
+                        $n *= 1024;
+                    case 'g':
+                        $n *= 1024;
+                    case 'm':
+                        $n *= 1024;
+                    case 'k':
+                        $n *= 1024;
+                }
+            }
+            return $n;
+        }, (string) $s);
+}
 
 }

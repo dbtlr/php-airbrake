@@ -10,10 +10,10 @@ use Airbrake\AirbrakeException as AirbrakeException;
  *
  * Loads via the inherited Record class methods.
  *
- * @package		Airbrake
- * @author		Drew Butler <drew@abstracting.me>
- * @copyright	(c) 2011 Drew Butler
- * @license		http://www.opensource.org/licenses/mit-license.php
+ * @package        Airbrake
+ * @author         Drew Butler <drew@abstracting.me>
+ * @copyright      (c) 2011 Drew Butler
+ * @license        http://www.opensource.org/licenses/mit-license.php
  */
 class Configuration extends Record
 {
@@ -30,12 +30,13 @@ class Configuration extends Record
     protected $_url;
     protected $_hostname;
     protected $_queue;
-    protected $_apiEndPoint  = 'http://api.airbrake.io/notifier_api/v2/notices';
-    protected $_additionalParams = array(); // any additional params to pass to Airbrake
-    protected $_validateXML = false; // set to true to validate the generated XML against a XSD file (see the XML validation class)
-    protected $_errorPrefix = null; // appended to all reports' titles
-    protected $_handleSeamlessly = false; // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
-    protected $_errorReporting = E_ALL; // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
+    protected $_apiEndPoint            = 'http://api.airbrake.io/notifier_api/v2/notices';
+    protected $_additionalParams       = array(); // any additional params to pass to Airbrake
+    protected $_validateXML            = false;   // set to true to validate the generated XML against a XSD file (see the XML validation class)
+    protected $_errorPrefix            = null;    // appended to all reports' titles
+    protected $_handleSeamlessly       = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
+    protected $_errorReporting         = E_ALL;   // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
+    protected $_silentExceptionClasses = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
 
     /**
      * Load the given data array to the record.
