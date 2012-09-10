@@ -9,7 +9,7 @@ Installation
 The best way to install the library is by using [Composer](http://getcomposer.org). Add the following to `composer.json` in the root of your project:
 
 ``` javascript
-{ 
+{
     "require": {
         "nodrew/php-airbrake": "*"
     }
