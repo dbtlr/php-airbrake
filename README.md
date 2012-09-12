@@ -10,9 +10,9 @@ The best way to install the library is by using [Composer](http://getcomposer.or
 
 ``` javascript
 { 
-    "require": {
-        "nodrew/php-airbrake": "*"
-    }
+  "require": {
+    "nodrew/php-airbrake": "dev-master"
+  }
 }
 ```
 
