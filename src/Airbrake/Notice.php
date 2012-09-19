@@ -29,6 +29,11 @@ class Notice extends Record
     protected $_errorMessage = null;
 
     /**
+     * Extra parameters to send to Airbrake
+     */
+    protected $_extraParameters = array();
+
+    /**
      * Convert the notice to xml
      *
      * @param Airbrake\Configuration $configuration
@@ -68,7 +73,7 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', $configuration->getParamters());
+        $this->array2Node($request, 'params', array_merge($configuration->getParamters(), array('airbrake_extra' => $this->extraParameters)));
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 
