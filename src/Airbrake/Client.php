@@ -77,7 +77,7 @@ class Client
         $notice->load(array(
             'errorClass'   => get_class($exception),
             'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
-            'errorMessage' => $exception->getMessage(),
+            'errorMessage' => $exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine(),
         ));
 
         return $this->notify($notice);
