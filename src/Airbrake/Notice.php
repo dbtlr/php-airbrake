@@ -65,7 +65,7 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', $configuration->getParamters());
+        $this->array2Node($request, 'params', $configuration->getParameters());
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 

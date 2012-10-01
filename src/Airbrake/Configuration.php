@@ -78,7 +78,7 @@ class Configuration extends Record
      *
      * @return array
      */
-    public function getParamters()
+    public function getParameters()
     {
         return array_merge($this->get('postData'), $this->get('getData'));
     }
