@@ -22,9 +22,11 @@ class EventHandler
      * The singleton instance
      */
     protected static $instance = null;
-    protected $airbrakeClient = null;
+
+    protected $airbrakeClient  = null;
     protected $notifyOnWarning = null;
-    protected $configuration = null;
+    protected $configuration   = null;
+    protected $locked          = false; // used to avoid infinite loops when reporting errors (namely, don't do anything that can generate any error when reporting another one...)
 
     // Minimum amount of memory required to actually report fatal errors to Airbrake
     // useful when reporting "out of memory" errors

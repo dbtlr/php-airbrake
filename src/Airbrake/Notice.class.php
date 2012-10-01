@@ -75,7 +75,11 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), $configuration->getAdditionalParams()));
+        // report usual params + whatever additional ones have been defined + the full error message in case Airbrake truncates it
+        $this->array2Node($request, 'params',
+            array_merge($configuration->getParameters(),
+                        $configuration->getAdditionalParams(),
+                        array('fullErrorMessage' => $this->errorMessage)));
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 
