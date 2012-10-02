@@ -68,7 +68,7 @@ class EventHandler
             set_exception_handler(array(self::$instance, 'onException'));
             register_shutdown_function(array(self::$instance, 'onShutdown'));
         }
-
+        
         return self::$instance;
     }
 
@@ -129,12 +129,18 @@ class EventHandler
      * @return bool
      */
     public function onException(Exception $exception)
-    {
+    {   
+        $filters = $this->airbrakeClient->configuration->filters;
+
+        if(in_array(get_class($exception), $filters)) {
+            return true;
+        }
+
         $this->airbrakeClient->notifyOnException($exception);
 
         return true;
     }
-    
+
     /**
      * Handles the PHP shutdown event.
      *
@@ -142,7 +148,13 @@ class EventHandler
      * otherwise lost when PHP decided to die unexpectedly.
      */
     public function onShutdown()
-    {
+    {   
+        $filters = $this->airbrakeClient->configuration->filters;
+
+        if(in_array(get_class($exception), $filters)) {
+            return true;
+        }
+
         // If the instance was unset, then we shouldn't run.
         if (self::$instance == null) {
             return;

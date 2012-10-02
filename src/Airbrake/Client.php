@@ -18,7 +18,7 @@ require_once realpath(__DIR__.'/Resque/NotifyJob.php');
  */
 class Client
 {
-    protected $configuration = null;
+    public $configuration = null;
     protected $connection = null;
     protected $notice = null;
 
