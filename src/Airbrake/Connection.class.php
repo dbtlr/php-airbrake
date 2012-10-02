@@ -26,10 +26,7 @@ class Connection
     {
         $this->configuration = $configuration;
 
-        $this->addHeader(array(
-            'Accept: text/xml, application/xml',
-            'Content-Type: text/xml'
-        ));
+        $this->addHeader(self::getDefaultHeaders());
     }
 
     /**
@@ -42,6 +39,14 @@ class Connection
         $this->headers += (array)$header;
     }
 
+    public static function getDefaultHeaders()
+    {
+        return array(
+            'Accept: text/xml, application/xml',
+            'Content-Type: text/xml'
+        );
+    }
+
     /**
      * @param Airbrake\Notice $notice
      * @param[optional] bool $validateXml = false - If true, validates the generated XML against the XSD schema defined
@@ -50,29 +55,11 @@ class Connection
      **/
     public function send(Notice $notice, $validateXml = false)
     {
-        $curl = curl_init();
+        $config = $this->configuration;
+        $xml    = $notice->toXml($this->configuration);
 
-        $xml = $notice->toXml($this->configuration);
-
-        curl_setopt($curl, CURLOPT_URL, $this->configuration->apiEndPoint);
-        curl_setopt($curl, CURLOPT_POST, 1);
-        curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_TIMEOUT, $this->configuration->timeout);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $xml);
-        curl_setopt($curl, CURLOPT_HTTPHEADER, $this->headers);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-        $return = curl_exec($curl);
-
-        // check there was no error, and spam the tech team if there was one
-        $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-
-        if ($response_status != 200) {
-            $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $return\n\nOriginal XML sent: $xml");
-            $exception->setShortDescription('Aibrake critical error when posting a report');
-            throw $exception;
-        }
-
-        curl_close($curl);
+        $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers,
+            function(AirbrakeException $e) { throw $e; });
 
         // if we asked to validate the XML, then do so
         if ( ($validateXml ||
@@ -85,7 +72,34 @@ class Connection
             throw $exception;
         }
 
-        return $return;
+        return $result;
+    }
+
+    public static function notify($xml, $apiEndPoint, $timeout, $headers, $errorNotificationCallback = null)
+    {
+        $curl = curl_init();
+
+        curl_setopt($curl, CURLOPT_URL, $apiEndPoint);
+        curl_setopt($curl, CURLOPT_POST, 1);
+        curl_setopt($curl, CURLOPT_HEADER, 0);
+        curl_setopt($curl, CURLOPT_TIMEOUT, $timeout);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $xml);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+
+        $answer = curl_exec($curl);
+
+        $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+
+        if ($response_status != 200 && $errorNotificationCallback && is_callable($errorNotificationCallback)) {
+            $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $answer\n\nOriginal XML sent: $xml");
+            $exception->setShortDescription('Aibrake critical error when posting a report');
+            call_user_func_array($errorNotificationCallback, array($exception));
+        }
+
+        curl_close($curl);
+
+        return $answer;
     }
 
 }

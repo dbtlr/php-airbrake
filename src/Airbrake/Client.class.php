@@ -7,6 +7,7 @@ require_once realpath(__DIR__.'/Connection.class.php');
 require_once realpath(__DIR__.'/Version.class.php');
 require_once realpath(__DIR__.'/AirbrakeException.class.php');
 require_once realpath(__DIR__.'/Notice.class.php');
+require_once realpath(__DIR__.'/iDelayedNotification.php');
 require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
@@ -20,8 +21,11 @@ require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 class Client
 {
     protected $configuration = null;
-    protected $connection = null;
-    protected $notice = null;
+    protected $connection    = null;
+    protected $notice        = null;
+
+    // used to avoid infinite loops when reporting errors with forked processes (namely, don't do anything that can generate any error when reporting another one...)
+    protected $locked        = false;
 
     /**
      * Build the Client with the Airbrake Configuration.
@@ -105,18 +109,55 @@ class Client
      *
      * If there is a PHP Resque client given in the configuration, then use that to queue up a job to
      * send this out later. This should help speed up operations.
+     * If we can fork a process to handle that, we do it.
+     * If some other class to create a delayed task is provided, we use that
+     * Otherwise, we send it live, in a blocking way
      *
      * @param Airbrake\Notice $notice
      */
-    public function notify(Notice $notice)
+    private function notify(Notice $notice)
     {
+        // use Resque, if available
         if (class_exists('Resque') && $this->configuration->queue) {
-            //print_r($notice);exit;
             $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
             \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
             return;
         }
 
+        // fork a process, if possible
+        elseif (function_exists('pcntl_fork')) {
+            if (!$this->locked) {
+                $isParent = pcntl_fork();
+                if (!$isParent) {
+                    // prevent infinite loops
+                    $this->locked = true;
+                    $this->connection->send($notice);
+                    // terminate the child process after that
+                    exit(0);
+                }
+            }
+            return;
+        }
+
+        // or if another class to notify later has been provided, try to use that
+        elseif ($delayedNotifClass = $this->configuration->get('delayedNotificationClass')) {
+            try {
+                if (!$delayedNotifClass::createDelayedNotification(array('Airbrake\Connection', 'notify'),
+                        $notice->toXml($this->configuration),
+                        $this->configuration->apiEndPoint,
+                        $this->configuration->delayedTimeout,
+                        json_encode(Connection::getDefaultHeaders()), // TODO wkpo bien necessaire de jsoniser??
+                        $this->configuration->get('errorNotificationCallback')))
+                {
+                    throw new Exception('Couldn\'t create delayed task');
+                }
+                return;
+            } catch(Exception $e) {
+                $this->configuration->notifyUpperLayer($e);
+            }
+        }
+
+        // nothing fancy, we just notify in a blocking way...
         return $this->connection->send($notice);
     }
 

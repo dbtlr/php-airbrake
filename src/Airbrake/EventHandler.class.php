@@ -26,7 +26,7 @@ class EventHandler
     protected $airbrakeClient  = null;
     protected $notifyOnWarning = null;
     protected $configuration   = null;
-    protected $locked          = false; // used to avoid infinite loops when reporting errors (namely, don't do anything that can generate any error when reporting another one...)
+
 
     // Minimum amount of memory required to actually report fatal errors to Airbrake
     // useful when reporting "out of memory" errors
@@ -173,8 +173,7 @@ class EventHandler
 
         $message = sprintf('A PHP error occurred (%s). %s', $this->errorNames[$type], $message);
 
-        $this->forkNotifyingProcess(array($this->airbrakeClient, 'notifyOnError'),
-                                    array($message, $file, $line, $backtrace));
+        $this->airbrakeClient->notifyOnError($message, $file, $line, $backtrace);
 
         return $result;
     }
@@ -197,8 +196,7 @@ class EventHandler
             $exception->airbrakeDontRethrow = true;
         } else {
             // business as usual
-            $this->forkNotifyingProcess(array($this->airbrakeClient, 'notifyOnException'),
-                                        array($exception));
+            $this->airbrakeClient->notifyOnException($exception);
         }
 
         return true;
@@ -250,8 +248,7 @@ class EventHandler
         $message = sprintf('Unexpected shutdown. Error: %s  File: %s  Line: %d',
                             $error['message'], $error['file'], $error['line']);
 
-        $this->forkNotifyingProcess(array($this->airbrakeClient, 'notifyOnError'),
-                                    array($message, $error['file'], $error['line']));
+        $this->airbrakeClient->notifyOnError($message, $error['file'], $error['line']);
     }
 
     public static function getClient()
@@ -290,19 +287,6 @@ class EventHandler
             throw new InvalidHashException();
         }
         return hash('md5', $hashedString);
-    }
-
-    // we leave the actual notification to a child process to avoid delaying the main thread
-    // $callback is the function to be called by the child process, and $args the arguments to
-    // be passed to this function
-    private function forkNotifyingProcess($callback, $args = array())
-    {
-        $isParent = pcntl_fork();
-        if (!$isParent) {
-            call_user_func_array($callback, $args);
-            // terminate the child process after that
-            exit(0);
-        }
     }
 
     // converts a string of the form '10G' or '5T' or '8M' to the corresponding number of bytes

@@ -75,11 +75,13 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        // report usual params + whatever additional ones have been defined + the full error message in case Airbrake truncates it
+        // report usual params + whatever additional ones have been defined
+        // + the full error message in case Airbrake truncates it + the time (for delayed notifications)
         $this->array2Node($request, 'params',
             array_merge($configuration->getParameters(),
                         $configuration->getAdditionalParams(),
-                        array('fullErrorMessage' => $this->errorMessage)));
+                        array('fullErrorMessage' => $this->errorMessage,
+                              'time'             => date('c'))));
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 

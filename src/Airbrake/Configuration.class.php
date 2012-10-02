@@ -19,6 +19,7 @@ class Configuration extends Record
 {
     protected $_apiKey;
     protected $_timeout = 2;
+    protected $_delayedTimeout = 30;
     protected $_environmentName = 'prod';
     protected $_serverData;
     protected $_getData;
@@ -43,7 +44,7 @@ class Configuration extends Record
                                                      // and finally, each callback must return an array (of params to be included in the notice)
     protected $_errorNotificationCallback = null;    // a callback that takes an AirbrakeException as a argument
                                                      // used to notify the upper layer
-
+    protected $_delayedNotificationClass  = null;    // a class to create delayed notification; this class *must* implement iDelayedNotification
 
     /**
      * Load the given data array to the record.
@@ -109,6 +110,11 @@ class Configuration extends Record
             throw new AirbrakeException(
                 'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
         }
+        if (($delayedNotifClass = $this->get('delayedNotificationClass'))
+            && !array_key_exists('Airbrake\iDelayedNotification', class_implements($delayedNotifClass)))
+        {
+            throw new AirbrakeException("delayedNotificationClass $delayedNotifClass does not implement iDelayedNotification");
+        }
     }
 
     public function getAdditionalParams()
@@ -116,17 +122,24 @@ class Configuration extends Record
         $result = $this->get('additionalParams');
         foreach ($this->get('additionalParamsCallback') as $params) {
             try {
-                // must be extra careful here not to trigger *any* error as this would result in a infinite loop!
-                if (!is_array($params)) {
-                    throw new Exception('')
+                // check the syntax is correct
+                if (! (is_array($params)
+                    && array_key_exists('callback', $params)
+                    && is_callable($params['callback'], false, $callableName)
+                    && array_key_exists('arguments', $params)
+                    && is_array($params['arguments'])) )
+                {
+                    throw new Exception('Incorrect additional callback, check syntax:\n'.var_export($params, true));
                 }
+                // call it, and if the result is an array, keep it!
+                $callbackResult = call_user_func_array($params['callback'], $params['arguments']);
+                if (!is_array($callbackResult)) {
+                    throw new Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
+                }
+                $result = array_merge($result, $callbackResult);
             } catch (Exception $e) {
                 // notify the upper layer, but keep reporting the current error anyway
-                $errorNotificationCallback = $this->get('errorNotificationCallback');
-                if ($errorNotificationCallback)
-                {
-                    $this
-                }
+                $this->notifyUpperLayer($e);
             }
         }
         return $result;
@@ -136,6 +149,18 @@ class Configuration extends Record
     {
         $params = $this->getAdditionalParams();
         $params[$key] = $value;
+    }
+
+    public function notifyUpperLayer(Exception $e)
+    {
+        $errorNotificationCallback = $this->get('errorNotificationCallback');
+        if ($errorNotificationCallback) {
+            $airbrakeException = new AirbrakeException($e->getMessage());
+            $airbrakeException->setShortDescription('Airbrake critical error when calling additional params callback');
+            try {
+                call_user_func_array($errorNotificationCallback, array($airbrakeException));
+            } catch (Exception $ignored) { }
+        }
     }
 
 }
