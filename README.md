@@ -49,12 +49,20 @@ following is an example of how to do that.
 <?php
 require_once "php-airbrake/src/Airbrake/EventHandler.php";
 
-$apiKey = 'YOUR-API-KEY';
+$apiKey = '[your api key]';
 $options= array('filters' => array('IgnoredException'));
 
 Airbrake\EventHandler::start($apiKey, false, $options);
+
+class IgnoredException extends Exception {}
+
+throw new IgnoredException()
 ?>
 ```
+
+The Airbrake client will see that the filters array contains a string
+matching the exception name, in this case, IgnoredException, and will
+ignore notifying the API. 
 
 Basic Usage Example
 ===================
