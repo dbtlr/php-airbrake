@@ -50,7 +50,7 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase {
      * @covers Airbrake\Configuration::getParamters
      */
     public function testGetParamters() {
-        $this->assertEquals($this->object->getParamters(), array(
+        $this->assertEquals($this->object->getParameters(), array(
             'get' => 'this',
             'post' => 'that')
         );
