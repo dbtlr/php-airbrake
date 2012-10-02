@@ -39,6 +39,23 @@ Airbrake\EventHandler::start('[your api key]');
 
 Optionally, you may pass a second parameter as TRUE to the start() method, in order to enable the logging of warning level messages as well. This is disabled by default, as it may considered too noisy, depending on the quality of the code base. There is also a third options array that may be passed, which will load many of the more common configuration options. These options are located below.
 
+Ignoring Exceptions
+===================
+
+Sometimes you may want to ignore particular exceptions, and the
+following is an example of how to do that.
+
+```php
+<?php
+require_once "php-airbrake/src/Airbrake/EventHandler.php";
+
+$apiKey = 'YOUR-API-KEY';
+$options= array('filters' => array('IgnoredException'));
+
+Airbrake\EventHandler::start($apiKey, false, $options);
+?>
+```
+
 Basic Usage Example
 ===================
 
