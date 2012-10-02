@@ -117,10 +117,11 @@ class Client
      */
     private function notify(Notice $notice)
     {
+        $config = $this->configuration;
         // use Resque, if available
-        if (class_exists('Resque') && $this->configuration->queue) {
-            $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
-            \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
+        if (class_exists('Resque') && $config->queue) {
+            $data = array('notice' => serialize($notice), 'configuration' => serialize($config));
+            \Resque::enqueue($config->queue, 'Airbrake\\Resque\\NotifyJob', $data);
             return;
         }
 
@@ -131,7 +132,7 @@ class Client
                 if (!$isParent) {
                     // prevent infinite loops
                     $this->locked = true;
-                    $this->connection->send($notice);
+                    $this->connection->send($notice, $config->delayedTimeout);
                     // terminate the child process after that
                     exit(0);
                 }
@@ -140,20 +141,20 @@ class Client
         }
 
         // or if another class to notify later has been provided, try to use that
-        elseif ($delayedNotifClass = $this->configuration->get('delayedNotificationClass')) {
+        elseif ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
                 if (!$delayedNotifClass::createDelayedNotification(array('Airbrake\Connection', 'notify'),
-                        $notice->toXml($this->configuration),
-                        $this->configuration->apiEndPoint,
-                        $this->configuration->delayedTimeout,
+                        $notice->toXml($config),
+                        $config->apiEndPoint,
+                        $config->delayedTimeout,
                         Connection::getDefaultHeaders(),
-                        $this->configuration->get('errorNotificationCallback')))
+                        $config->get('errorNotificationCallback')))
                 {
                     throw new Exception('Couldn\'t create delayed task');
                 }
                 return;
             } catch(Exception $e) {
-                $this->configuration->notifyUpperLayer($e);
+                $config->notifyUpperLayer($e);
             }
         }
 

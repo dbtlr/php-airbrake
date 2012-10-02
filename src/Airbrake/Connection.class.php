@@ -49,16 +49,15 @@ class Connection
 
     /**
      * @param Airbrake\Notice $notice
-     * @param[optional] bool $validateXml = false - If true, validates the generated XML against the XSD schema defined
-     *                                              in XSD_SCHEMA_FILE (if any error is found, it spams the tech team)
+     * @param[optional] $overrideTimeout = null - if provided, used for the timeout instead of the config's one
      * @return string
      **/
-    public function send(Notice $notice, $validateXml = false)
+    public function send(Notice $notice, $overrideTimeout = null)
     {
         $config = $this->configuration;
         $xml    = $notice->toXml($config);
 
-        $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers,
+        $result = self::notify($xml, $config->apiEndPoint, $overrideTimeout ? : $config->timeout, $this->headers,
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); });
 
         // if we asked to validate the XML, then do so
