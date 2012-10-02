@@ -149,12 +149,6 @@ class EventHandler
      */
     public function onShutdown()
     {   
-        $filters = $this->airbrakeClient->configuration->filters;
-
-        if(in_array(get_class($exception), $filters)) {
-            return true;
-        }
-
         // If the instance was unset, then we shouldn't run.
         if (self::$instance == null) {
             return;
