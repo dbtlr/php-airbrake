@@ -146,7 +146,7 @@ class Client
                         $notice->toXml($this->configuration),
                         $this->configuration->apiEndPoint,
                         $this->configuration->delayedTimeout,
-                        json_encode(Connection::getDefaultHeaders()), // TODO wkpo bien necessaire de jsoniser??
+                        Connection::getDefaultHeaders(),
                         $this->configuration->get('errorNotificationCallback')))
                 {
                     throw new Exception('Couldn\'t create delayed task');

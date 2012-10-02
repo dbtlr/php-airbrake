@@ -59,7 +59,7 @@ class Connection
         $xml    = $notice->toXml($this->configuration);
 
         $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers,
-            function(AirbrakeException $e) { throw $e; });
+            function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); });
 
         // if we asked to validate the XML, then do so
         if ( ($validateXml ||

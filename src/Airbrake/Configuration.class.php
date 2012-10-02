@@ -151,15 +151,21 @@ class Configuration extends Record
         $params[$key] = $value;
     }
 
-    public function notifyUpperLayer(Exception $e)
+    public function notifyUpperLayer(\Exception $e, $rethrowIfNoCallback = false)
     {
-        $errorNotificationCallback = $this->get('errorNotificationCallback');
-        if ($errorNotificationCallback) {
+        if ($e instanceof AirbrakeException) {
+            $airbrakeException = $e;
+        } else {
             $airbrakeException = new AirbrakeException($e->getMessage());
             $airbrakeException->setShortDescription('Airbrake critical error when calling additional params callback');
+        }
+        $errorNotificationCallback = $this->get('errorNotificationCallback');
+        if ($errorNotificationCallback) {
             try {
                 call_user_func_array($errorNotificationCallback, array($airbrakeException));
             } catch (Exception $ignored) { }
+        } elseif($rethrowIfNoCallback) {
+            throw $airbrakeException;
         }
     }
 
