@@ -56,7 +56,7 @@ class Connection
     public function send(Notice $notice, $validateXml = false)
     {
         $config = $this->configuration;
-        $xml    = $notice->toXml($this->configuration);
+        $xml    = $notice->toXml($config);
 
         $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers,
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); });
