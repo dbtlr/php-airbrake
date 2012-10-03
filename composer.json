@@ -1,10 +1,10 @@
 {
-    "name": "airbrake/php-airbrake",
+    "name": "airbrake/airbrake-php",
     "version":"1.0.0",
     "type": "library",
     "description": "A PHP 5.3 library for sending errors to the Airbrake.io service.",
     "keywords": ["airbrake", "exceptions", "errors", "logging"],
-    "homepage": "https://github.com/airbrake/php-airbrake",
+    "homepage": "https://github.com/airbrake/airbrake-php",
     "license": "MIT",
     "authors": [{
         "name": "Airbrake",
