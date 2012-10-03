@@ -12,7 +12,7 @@ The best way to install the library is by using [Composer](http://getcomposer.or
 ``` javascript
 { 
     "require": {
-        "airbrake/php-airbrake": "dev-master"
+        "airbrake/airbrake-php": "dev-master"
     }
 }
 ```
