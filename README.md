@@ -26,6 +26,12 @@ php composer.phar install
 
 Use the generated `vendor/.composer/autoload.php` file to autoload the library classes.
 
+Note that this repository was previously named php-airbrake, but has
+since been renamed to airbrake-php (to keep in line with the Airbrake
+client naming convention).
+If your composer.json contains the old package name, please update it to
+the one above.
+
 Exception Handler Example
 =========================
 
