@@ -33,7 +33,7 @@ The preferred method for this to be used is via error and exception handlers, so
 
 ```php
 <?php
-require_once 'php-airbrake/src/Airbrake/EventHandler.php';
+require_once 'airbrake-php/src/Airbrake/EventHandler.php';
 Airbrake\EventHandler::start('[your api key]');
 ```
 
@@ -47,7 +47,7 @@ following is an example of how to do that.
 
 ```php
 <?php
-require_once "php-airbrake/src/Airbrake/EventHandler.php";
+require_once "airbrake-php/src/Airbrake/EventHandler.php";
 
 $apiKey = '[your api key]';
 $options= array('filters' => array('IgnoredException'));
@@ -71,8 +71,8 @@ If calling the class directly and not through an exception handler, it would be 
 
 ```php
 <?php
-require_once 'php-airbrake/src/Airbrake/Client.php';
-require_once 'php-airbrake/src/Airbrake/Configuration.php';
+require_once 'airbrake-php/src/Airbrake/Client.php';
+require_once 'airbrake-php/src/Airbrake/Configuration.php';
 
 $apiKey  = '[your api key]'; // This is required
 $options = array(); // This is optional
@@ -104,7 +104,7 @@ In order to speed up polling time, it may be desirable to pair Airbrake with a R
 ```php
 <?php
 
-require_once 'php-airbrake/src/Airbrake/EventHandler.php';
+require_once 'airbrake-php/src/Airbrake/EventHandler.php';
 require_once 'php-resque/lib/Resque.php';
 
 Airbrake\EventHandler::start('[your api key]', true, array('queue' => 'airbrake'));
@@ -113,7 +113,7 @@ Airbrake\EventHandler::start('[your api key]', true, array('queue' => 'airbrake'
 In order to start the requested queue, simply run this command.
 
 ```
-QUEUE=airbrake APP_INCLUDE=php-airbrake/src/Airbrake/Client.php php php-resque/resque.php
+QUEUE=airbrake APP_INCLUDE=airbrake-php/src/Airbrake/Client.php php php-resque/resque.php
 ```
 
 This will start the queue running properly.

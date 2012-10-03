@@ -8,8 +8,8 @@ namespace Airbrake;
  */
 class Version
 {
-	const NAME    = 'airbrake-php-airbrake';
+	const NAME    = 'airbrake-airbrake-php';
 	const NUMBER  = '1.0';
-	const APP_URL = 'https://github.com/airbrake/php-airbrake';
+	const APP_URL = 'https://github.com/airbrake/airbrake-php';
 	const API     = '2.0';
 }
