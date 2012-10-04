@@ -49,10 +49,9 @@ class Connection
 
     /**
      * @param Airbrake\Notice $notice
-     * @param[optional] $overrideTimeout = null - if provided, used for the timeout instead of the config's one
      * @return string
      **/
-    public function send(Notice $notice, $overrideTimeout = null)
+    public function send(Notice $notice)
     {
         $config = $this->configuration;
         $xml    = $notice->toXml($config);
@@ -61,8 +60,7 @@ class Connection
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); });
 
         // if we asked to validate the XML, then do so
-        if ( ($validateXml ||
-            ($this->configuration && $this->configuration->get('validateXML')) )
+        if ($this->configuration && $this->configuration->get('validateXML')
             && !XMLValidator::validateXML($xml)) {
 
             $exception = new AirbrakeException("Validation errors:\n".XMLValidator::prettyPrintXMLValidationErrors().

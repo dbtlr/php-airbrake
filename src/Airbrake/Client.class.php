@@ -24,9 +24,6 @@ class Client
     protected $connection    = null;
     protected $notice        = null;
 
-    // used to avoid infinite loops when reporting errors with forked processes (namely, don't do anything that can generate any error when reporting another one...)
-    protected $locked        = false;
-
     /**
      * Build the Client with the Airbrake Configuration.
      *
@@ -124,22 +121,6 @@ class Client
             \Resque::enqueue($config->queue, 'Airbrake\\Resque\\NotifyJob', $data);
             return;
         }
-
-        // fork a process, if possible
-        elseif (function_exists('pcntl_fork')) {
-            if (!$this->locked) {
-                $isParent = pcntl_fork();
-                if (!$isParent) {
-                    // prevent infinite loops
-                    $this->locked = true;
-                    $this->connection->send($notice, $config->delayedTimeout);
-                    // terminate the child process after that
-                    exit(0);
-                }
-            }
-            return;
-        }
-
         // or if another class to notify later has been provided, try to use that
         elseif ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
