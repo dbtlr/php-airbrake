@@ -58,7 +58,8 @@ class Notice extends Record
         if ($configuration->get('errorPrefix')) {
             $errorPrefix = $configuration->get('errorPrefix').' - ';
         }
-        $error->addChild('message', ($errorPrefix ?: '').$this->errorMessage);
+        $message = ($errorPrefix ?: '').$this->errorMessage;
+        $error->addChild('message', $this->sanitize($message));
 
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
@@ -75,9 +76,9 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), $configuration->getAdditionalParams()));
-        $this->array2Node($request, 'session', $configuration->get('sessionData'));
-        $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
+        $this->array2Node($request, 'params', $this->sanitize(array_merge($configuration->getParameters(), $configuration->getAdditionalParams())));
+        $this->array2Node($request, 'session', $this->sanitize($configuration->get('sessionData')));
+        $this->array2Node($request, 'cgi-data', $this->sanitize($configuration->get('serverData')));
 
         return $doc->asXML();
     }
@@ -107,4 +108,23 @@ class Notice extends Record
         }
     }
 
+    // cleans the inputs from chars not supported by SimpleXMLElements
+    // (as of today, mainly vertical tabs \v)
+    private function sanitizeString($s)
+    {
+        return preg_replace('/\v/', ' ', $s);
+    }
+
+    // recursively sanitizes arrays
+    private function sanitize($a)
+    {
+        if (is_string($a)) {
+            return $this->sanitizeString($a);
+        } elseif(is_array($a)) {
+            foreach ($a as $key => $value) {
+                $a[$key] = $this->sanitize($value);
+            }
+        }
+        return $a;
+    }
 }
