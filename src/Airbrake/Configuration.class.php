@@ -44,7 +44,7 @@ class Configuration extends Record
                                                      // and finally, each callback must return an array (of params to be included in the notice)
     protected $_errorNotificationCallback = null;    // a callback that takes an AirbrakeException as a argument
                                                      // used to notify the upper layer
-    protected $_delayedNotificationClass  = null;    // a class to create delayed notification; this class *must* implement iDelayedNotification
+    protected $_delayedNotificationClass  = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
 
     /**
      * Load the given data array to the record.
@@ -111,9 +111,9 @@ class Configuration extends Record
                 'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
         }
         if (($delayedNotifClass = $this->get('delayedNotificationClass'))
-            && !array_key_exists('Airbrake\iDelayedNotification', class_implements($delayedNotifClass)))
+            && !array_key_exists('Airbrake\IDelayedNotification', class_implements($delayedNotifClass)))
         {
-            throw new AirbrakeException("delayedNotificationClass $delayedNotifClass does not implement iDelayedNotification");
+            throw new AirbrakeException("delayedNotificationClass $delayedNotifClass does not implement IDelayedNotification");
         }
     }
 

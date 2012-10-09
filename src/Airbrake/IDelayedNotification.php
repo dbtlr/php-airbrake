@@ -2,13 +2,13 @@
 namespace Airbrake;
 
 /**
- * Airbrake iDelayedNotification interface.
+ * Airbrake IDelayedNotification interface.
  * 
  * An interface to create notifications to be sent later to the Airbrake API
  *
  * @package        Airbrake
  */
-interface iDelayedNotification
+interface IDelayedNotification
 {
     // $staticNotifyMethod will be Connection::notify
     // $xml the XML content to be sent

@@ -7,7 +7,7 @@ require_once realpath(__DIR__.'/Connection.class.php');
 require_once realpath(__DIR__.'/Version.class.php');
 require_once realpath(__DIR__.'/AirbrakeException.class.php');
 require_once realpath(__DIR__.'/Notice.class.php');
-require_once realpath(__DIR__.'/iDelayedNotification.php');
+require_once realpath(__DIR__.'/IDelayedNotification.php');
 require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
@@ -106,9 +106,8 @@ class Client
      *
      * If there is a PHP Resque client given in the configuration, then use that to queue up a job to
      * send this out later. This should help speed up operations.
-     * If we can fork a process to handle that, we do it.
-     * If some other class to create a delayed task is provided, we use that
-     * Otherwise, we send it live, in a blocking way
+     * If some other class to create a delayed task is provided, we use that.
+     * Otherwise, we send it live, in a blocking way.
      *
      * @param Airbrake\Notice $notice
      */
