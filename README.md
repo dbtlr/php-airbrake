@@ -124,6 +124,27 @@ QUEUE=airbrake APP_INCLUDE=airbrake-php/src/Airbrake/Client.php php php-resque/r
 
 This will start the queue running properly.
 
+Asyncronous Notifications
+=========================
+
+By default, the notifier uses cURL to send the exceptions to Airbrake,
+which will wait for a response back from the server. If this is not
+derisable for your application, you can pass async => true into the 
+options array and the notifier will send an asyncronous notification
+using a socket connection.
+
+```php
+<?php
+require_once "airbrake-php/src/Airbrake/EventHandler.php";
+
+$apiKey = '[your api key]';
+$options= array('async' => true);
+
+Airbrake\EventHandler::start($apiKey, false, $options);
+
+?>
+```
+
 Configuration Options
 =====================
 
