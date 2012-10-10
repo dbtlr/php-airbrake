@@ -76,7 +76,7 @@ class Configuration extends Record
             $this->hostname = isset($this->serverData['HTTP_HOST']) ? $this->serverData['HTTP_HOST'] : 'No Host';
         }
 
-        $this->apiEndPoint = 'http'.$this->host.$this->resource;
+        $this->apiEndPoint = 'http://'.$this->host.$this->resource;
     }
 
     /**
