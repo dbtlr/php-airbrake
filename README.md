@@ -160,5 +160,5 @@ Configuration Options
 - **url** - The main URL that was requested.
 - **hostname** - The hostname that was requested.
 - **queue** - Optional - the name of the Resque queue to use.
-- Filters - Optional - A list of errors to ignore
-- Async   - Optional - Will asynchronously send exceptions if true
+- **Filters** - Optional - A list of errors to ignore
+- **Async**   - Optional - Will asynchronously send exceptions if true
