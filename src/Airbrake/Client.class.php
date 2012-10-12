@@ -7,6 +7,7 @@ require_once realpath(__DIR__.'/Connection.class.php');
 require_once realpath(__DIR__.'/Version.class.php');
 require_once realpath(__DIR__.'/AirbrakeException.class.php');
 require_once realpath(__DIR__.'/Notice.class.php');
+require_once realpath(__DIR__.'/IDelayedNotification.php');
 require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
@@ -20,8 +21,8 @@ require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 class Client
 {
     protected $configuration = null;
-    protected $connection = null;
-    protected $notice = null;
+    protected $connection    = null;
+    protected $notice        = null;
 
     /**
      * Build the Client with the Airbrake Configuration.
@@ -105,18 +106,39 @@ class Client
      *
      * If there is a PHP Resque client given in the configuration, then use that to queue up a job to
      * send this out later. This should help speed up operations.
+     * If some other class to create a delayed task is provided, we use that.
+     * Otherwise, we send it live, in a blocking way.
      *
      * @param Airbrake\Notice $notice
      */
-    public function notify(Notice $notice)
+    private function notify(Notice $notice)
     {
-        if (class_exists('Resque') && $this->configuration->queue) {
-            //print_r($notice);exit;
-            $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
-            \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
+        $config = $this->configuration;
+        // use Resque, if available
+        if (class_exists('Resque') && $config->queue) {
+            $data = array('notice' => serialize($notice), 'configuration' => serialize($config));
+            \Resque::enqueue($config->queue, 'Airbrake\\Resque\\NotifyJob', $data);
             return;
         }
+        // or if another class to notify later has been provided, try to use that
+        elseif ($delayedNotifClass = $config->get('delayedNotificationClass')) {
+            try {
+                if (!$delayedNotifClass::createDelayedNotification(array('Airbrake\Connection', 'notify'),
+                        $notice->toXml($config),
+                        $config->apiEndPoint,
+                        $config->delayedTimeout,
+                        Connection::getDefaultHeaders(),
+                        $config->get('errorNotificationCallback')))
+                {
+                    throw new Exception('Couldn\'t create delayed task');
+                }
+                return;
+            } catch(Exception $e) {
+                $config->notifyUpperLayer($e);
+            }
+        }
 
+        // nothing fancy, we just notify in a blocking way...
         return $this->connection->send($notice);
     }
 

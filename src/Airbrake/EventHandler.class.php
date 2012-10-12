@@ -22,9 +22,11 @@ class EventHandler
      * The singleton instance
      */
     protected static $instance = null;
-    protected $airbrakeClient = null;
+
+    protected $airbrakeClient  = null;
     protected $notifyOnWarning = null;
-    protected $configuration = null;
+    protected $configuration   = null;
+
 
     // Minimum amount of memory required to actually report fatal errors to Airbrake
     // useful when reporting "out of memory" errors
@@ -170,6 +172,7 @@ class EventHandler
         array_shift( $backtrace );
 
         $message = sprintf('A PHP error occurred (%s). %s', $this->errorNames[$type], $message);
+
         $this->airbrakeClient->notifyOnError($message, $file, $line, $backtrace);
 
         return $result;
@@ -242,11 +245,10 @@ class EventHandler
         }
         catch (InvalidHashException $e) {}
 
-        $this->airbrakeClient->notifyOnError(
-            sprintf(
-                'Unexpected shutdown. Error: %s  File: %s  Line: %d',
-                $error['message'], $error['file'], $error['line']),
-            $error['file'], $error['line']);
+        $message = sprintf('Unexpected shutdown. Error: %s  File: %s  Line: %d',
+                            $error['message'], $error['file'], $error['line']);
+
+        $this->airbrakeClient->notifyOnError($message, $error['file'], $error['line']);
     }
 
     public static function getClient()
