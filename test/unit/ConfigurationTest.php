@@ -19,7 +19,9 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase {
             'hostname' => 'airbraker',
             'queue' => 'airbrake-queue',
             'getData' => array('get' => 'this'),
-            'postData' => array('post' => 'that')
+            'postData' => array('post' => 'that'),
+            'filters' => array('ExceptionOne','ExceptionTwo'),
+            'async' => true
         );
         $this->object = new Configuration('1234',$config);
     }
@@ -44,6 +46,10 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase {
         $this->assertEquals($this->object->get('postData'), array('post' => 'that'));
         $this->assertInternalType('array', $this->object->get('getData'));
         $this->assertInternalType('array', $this->object->get('postData'));
+        $this->assertInternalType('array', $this->object->get('filters'));
+        $this->assertEquals('ExceptionOne', $this->object->get('filters')[0]);
+        $this->assertEquals('ExceptionTwo', $this->object->get('filters')[1]);
+        $this->assertEquals(true, $this->object->get('async'));
     }
 
     /**
