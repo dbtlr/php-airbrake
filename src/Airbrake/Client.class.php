@@ -92,10 +92,15 @@ class Client
 
         $backtrace = array_merge($backtrace,
             $exception->getTrace() ?: debug_backtrace());
+        if (property_exists($exception, 'airbrakeMessagePrefix') && $exception->airbrakeMessagePrefix) {
+            $prefix = $exception->airbrakeMessagePrefix;
+        } else {
+            $prefix = 'Uncaught ';
+        }
         $notice->load(array(
             'errorClass'   => get_class($exception),
             'backtrace'    => $backtrace,
-            'errorMessage' => 'Uncaught '.get_class($exception).' : '.$exception->getMessage(),
+            'errorMessage' => $prefix.get_class($exception).' exception : '.$exception->getMessage(),
         ));
 
         return $this->notify($notice);

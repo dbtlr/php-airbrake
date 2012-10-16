@@ -97,7 +97,9 @@ class EventHandler
                     array(EventHandler::getInstance(), 'onException'),
                     array($exception, $config));
 
-                if ($config->get('handleSeamlessly') && !property_exists($exception, 'airbrakeDontRethrow')) {
+                if ($config->get('handleSeamlessly')
+                    && !(property_exists($exception, 'airbrakeDontRethrow') && $exception->airbrakeDontRethrow))
+                    {
                     // then call the original handler
                     // (and we disable Airbrake fatal error handler before to avoid getting twice the same error logged in there)
                     EventHandler::reset(false);
