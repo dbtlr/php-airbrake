@@ -14,5 +14,5 @@ interface IDelayedNotification
     // $xml the XML content to be sent
     // $errorNotificationCallback is a callback to handle errors (a function that takes an AirbrakeException as argument)
     // must return true iff the task was succesfully created
-    public static function createDelayedNotification($staticNotifyMethod, $xml, $apiEndPoint, $timeout, $headers, $errorNotificationCallback = null);
+    public static function createDelayedNotification($staticNotifyMethod, $xml, $apiEndPoint, $timeout, $headers, $errorMessage, $errorNotificationCallback = null);
 }
