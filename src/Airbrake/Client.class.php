@@ -133,6 +133,7 @@ class Client
                         $config->apiEndPoint,
                         $config->delayedTimeout,
                         Connection::getDefaultHeaders(),
+                        $notice->errorMessage,
                         $config->get('errorNotificationCallback')))
                 {
                     throw new Exception('Couldn\'t create delayed task');
