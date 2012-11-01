@@ -139,7 +139,8 @@ class Client
                         $config->delayedTimeout,
                         Connection::getDefaultHeaders(),
                         $notice->errorMessage,
-                        $config->get('errorNotificationCallback')))
+                        $config->get('errorNotificationCallback'),
+                        $config->get('secondaryNotificationCallback')))
                 {
                     throw new Exception('Couldn\'t create delayed task');
                 }

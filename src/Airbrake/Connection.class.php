@@ -56,8 +56,10 @@ class Connection
         $config = $this->configuration;
         $xml    = $notice->toXml($config);
 
-        $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers,
-            function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); });
+        $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers, $notice->errorMessage,
+            function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); },
+            function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true, true); }
+        );
 
         // if we asked to validate the XML, then do so
         if ($this->configuration && $this->configuration->get('validateXML')
@@ -72,7 +74,7 @@ class Connection
         return $result;
     }
 
-    public static function notify($xml, $apiEndPoint, $timeout, $headers, $errorNotificationCallback = null)
+    public static function notify($xml, $apiEndPoint, $timeout, $headers, $errorMessage, $errorNotificationCallback = null, $secondaryCallback = null)
     {
         $curl = curl_init();
 
@@ -88,10 +90,21 @@ class Connection
 
         $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
-        if ($response_status != 200 && $errorNotificationCallback && is_callable($errorNotificationCallback)) {
-            $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $answer\n\nOriginal XML sent: $xml");
-            $exception->setShortDescription('Aibrake critical error when posting a report');
-            call_user_func_array($errorNotificationCallback, array($exception));
+        if ($response_status != 200) {
+            if ($response_status == 503
+                && preg_match("/^You've performed too many requests \d+\/\d+$/", $answer)
+                && $secondaryCallback
+                && is_callable($secondaryCallback))
+                {
+                // just log 'over the limit' errors to the secondary notifier, if any exists, otherwise go with the primary one
+                $exception = new AirbrakeException("Over plan limit, didn't log error: $errorMessage");
+                $exception->setShortDescription('over_airbrake_api_limit');
+                call_user_func_array($secondaryCallback, array($exception));
+            } elseif($errorNotificationCallback && is_callable($errorNotificationCallback)) {
+                $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $answer\n\nOriginal XML sent: $xml");
+                $exception->setShortDescription('Aibrake critical error when posting a report');
+                call_user_func_array($errorNotificationCallback, array($exception));
+            }
         }
 
         curl_close($curl);

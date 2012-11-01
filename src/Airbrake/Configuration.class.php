@@ -31,20 +31,22 @@ class Configuration extends Record
     protected $_url;
     protected $_hostname;
     protected $_queue;
-    protected $_apiEndPoint               = 'http://api.airbrake.io/notifier_api/v2/notices';
-    protected $_validateXML               = false;   // set to true to validate the generated XML against a XSD file (see the XML validation class)
-    protected $_errorPrefix               = null;    // appended to all reports' titles
-    protected $_handleSeamlessly          = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
-    protected $_errorReporting            = E_ALL;   // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
-    protected $_silentExceptionClasses    = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
-    protected $_additionalParams          = array(); // any additional params to pass to Airbrake
-    protected $_additionalParamsCallback  = array(); // callbacks to be called when constructing the notice
-                                                     // each entry must be an array with 2 keys : 'callback' defining a callback function,
-                                                     // and 'arguments' defining an array of arguments to be passed to the callback
-                                                     // and finally, each callback must return an array (of params to be included in the notice)
-    protected $_errorNotificationCallback = null;    // a callback that takes an AirbrakeException as a argument
-                                                     // used to notify the upper layer
-    protected $_delayedNotificationClass  = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
+    protected $_apiEndPoint                    = 'http://api.airbrake.io/notifier_api/v2/notices';
+    protected $_validateXML                    = false;   // set to true to validate the generated XML against a XSD file (see the XML validation class)
+    protected $_errorPrefix                    = null;    // appended to all reports' titles
+    protected $_handleSeamlessly               = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
+    protected $_errorReporting                 = E_ALL;   // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
+    protected $_silentExceptionClasses         = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
+    protected $_additionalParams               = array(); // any additional params to pass to Airbrake
+    protected $_additionalParamsCallback       = array(); // callbacks to be called when constructing the notice
+                                                          // each entry must be an array with 2 keys : 'callback' defining a callback function,
+                                                          // and 'arguments' defining an array of arguments to be passed to the callback
+                                                          // and finally, each callback must return an array (of params to be included in the notice)
+    protected $_errorNotificationCallback      = null;    // a callback that takes an AirbrakeException as a argument
+                                                          // used to notify the upper layer
+    protected $_delayedNotificationClass       = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
+    protected $_secondaryNotificationCallback  = null;    // a callback that takes an AirbrakeException as a argument
+                                                          // used to notify the upper layer of secondary errors (like "over the limit" errors when notofying to Airbrake)
 
     /**
      * Load the given data array to the record.
@@ -151,18 +153,26 @@ class Configuration extends Record
         $params[$key] = $value;
     }
 
-    public function notifyUpperLayer(\Exception $e, $rethrowIfNoCallback = false)
+    public function notifyUpperLayer(\Exception $e, $rethrowIfNoCallback = false, $secondaryNotification = false)
     {
         if ($e instanceof AirbrakeException) {
             $airbrakeException = $e;
         } else {
             $airbrakeException = new AirbrakeException($e->getMessage());
-            $airbrakeException->setShortDescription('Airbrake critical error when calling additional params callback');
         }
-        $errorNotificationCallback = $this->get('errorNotificationCallback');
-        if ($errorNotificationCallback) {
+        $callback = null;
+        if ($secondaryNotification) {
+            $callback = $this->get('secondaryNotificationCallback');
+        }
+        if (!$callback) {
+            $callback = $this->get('errorNotificationCallback');
+        }
+        if ($callback && !is_callable($callback)) {
+            $callback = null;
+        }
+        if ($callback) {
             try {
-                call_user_func_array($errorNotificationCallback, array($airbrakeException));
+                call_user_func_array($callback, array($airbrakeException));
             } catch (Exception $ignored) { }
         } elseif($rethrowIfNoCallback) {
             throw $airbrakeException;
