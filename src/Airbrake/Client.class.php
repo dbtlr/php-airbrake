@@ -95,12 +95,17 @@ class Client
         if (property_exists($exception, 'airbrakeMessagePrefix') && $exception->airbrakeMessagePrefix) {
             $prefix = $exception->airbrakeMessagePrefix;
         } else {
-            $prefix = 'Uncaught ';
+            $prefix = 'Uncaught';
+        }
+        if (property_exists($exception, 'airbrakeExceptionClassOverride') && $exception->airbrakeExceptionClassOverride) {
+            $classException = $exception->airbrakeExceptionClassOverride;
+        } else {
+            $classException = get_class($exception);
         }
         $notice->load(array(
-            'errorClass'   => get_class($exception),
+            'errorClass'   => $classException,
             'backtrace'    => $backtrace,
-            'errorMessage' => $prefix.get_class($exception).' exception : '.$exception->getMessage(),
+            'errorMessage' => $prefix.' '.$classException.' : '.$exception->getMessage(),
         ));
 
         return $this->notify($notice);
