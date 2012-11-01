@@ -60,14 +60,14 @@ abstract class Record implements ArrayAccess, IteratorAggregate
      * @param string $key
      * @return mixed
      */
-    public function get($key)
+    public function get($key, $default = null)
     {
         if ($this->exists($key)) {
             $key = self::PREFIX.$key;
             return $this->$key;
         }
 
-        return null;
+        return $default;
     }
 
     /**

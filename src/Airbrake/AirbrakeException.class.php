@@ -21,7 +21,7 @@ class AirbrakeException extends \Exception
 
     public function getShortDescription()
     {
-        return $this->shortDescription;
+        return $this->shortDescription ? : 'Airbrake error';
     }
 
 }
