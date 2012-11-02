@@ -92,7 +92,7 @@ class Connection
 
         if ($response_status != 200) {
             if ($response_status == 503
-                && preg_match("/^You've performed too many requests \d+\/\d+$/", $answer)
+                && (preg_match("/^You've performed too many requests \d+\/\d+$/", $answer) || $answer == 'You are in a cooldown period for making too many requests')
                 && $secondaryCallback
                 && is_callable($secondaryCallback))
                 {
