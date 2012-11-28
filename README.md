@@ -23,7 +23,7 @@ curl -s http://getcomposer.org/installer | php
 php composer.phar install
 ```
 
-Use the generated `vendor/.composer/autoload.php` file to autoload the library classes.
+Use the generated `vendor/autoload.php` file to autoload the library classes.
 
 Exception Handler Example
 =========================
@@ -35,6 +35,8 @@ The preferred method for this to be used is via error and exception handlers, so
 require_once 'php-airbrake/src/Airbrake/EventHandler.php';
 Airbrake\EventHandler::start('[your api key]');
 ```
+
+Note that you may omit the `require_once` if you are autoloading (as described in Installation).
 
 Optionally, you may pass a second parameter as TRUE to the start() method, in order to enable the logging of warning level messages as well. This is disabled by default, as it may considered too noisy, depending on the quality of the code base. There is also a third options array that may be passed, which will load many of the more common configuration options. These options are located below.
 
