@@ -76,16 +76,16 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        // report usual params + whatever additional ones have been defined
+        // report usual data + whatever additional vars have been defined
         // + the full error message in case Airbrake truncates it + the time (for delayed notifications)
-        $params = array_merge($configuration->getParameters(),
-                              $configuration->getAdditionalParams(),
-                              array('fullErrorMessage' => $this->errorMessage,
-                                    'time'             => date('c'))
-                              );
-        $this->array2Node($request, 'params', $this->sanitize($params));
+        $cgi_data = array_merge($configuration->get('serverData'),
+                                $configuration->getAdditionalParams(),
+                                array('fullErrorMessage' => $this->errorMessage,
+                                      'time'             => date('c'))
+                                );
+        $this->array2Node($request, 'params', $this->sanitize($configuration->getParameters()));
         $this->array2Node($request, 'session', $this->sanitize($configuration->get('sessionData')));
-        $this->array2Node($request, 'cgi-data', $this->sanitize($configuration->get('serverData')));
+        $this->array2Node($request, 'cgi-data', $this->sanitize($cgi_data));
 
         return $doc->asXML();
     }
