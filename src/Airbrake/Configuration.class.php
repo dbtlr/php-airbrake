@@ -139,7 +139,7 @@ class Configuration extends Record
                     throw new Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
                 }
                 $result = array_merge($result, $callbackResult);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 // notify the upper layer, but keep reporting the current error anyway
                 $this->notifyUpperLayer($e);
             }
@@ -173,7 +173,7 @@ class Configuration extends Record
         if ($callback) {
             try {
                 call_user_func_array($callback, array($airbrakeException));
-            } catch (Exception $ignored) { }
+            } catch (\Exception $ignored) { }
         } elseif($rethrowIfNoCallback) {
             throw $airbrakeException;
         }

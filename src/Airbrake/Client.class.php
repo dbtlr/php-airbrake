@@ -142,10 +142,10 @@ class Client
                         $config->get('errorNotificationCallback'),
                         $config->get('secondaryNotificationCallback')))
                 {
-                    throw new Exception('Couldn\'t create delayed task');
+                    throw new \Exception('Couldn\'t create delayed task');
                 }
                 return;
-            } catch(Exception $e) {
+            } catch(\Exception $e) {
                 $config->notifyUpperLayer($e);
             }
         }
