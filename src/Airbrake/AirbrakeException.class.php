@@ -11,7 +11,6 @@ namespace Airbrake;
  */
 class AirbrakeException extends \Exception
 {
-    // TODO wkpo: fix namespace, plus constructor!!
     // a string to put in an email subject line
     private $shortDescription = null;
     // a tag to log errors

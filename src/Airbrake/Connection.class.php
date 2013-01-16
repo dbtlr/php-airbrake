@@ -90,7 +90,7 @@ class Connection
 
         $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
-        if (true || $response_status != 200) { // TODO wkpo
+        if ($response_status != 200) {
             if ($response_status == 503
                 && (preg_match("/^You've performed too many requests \d+\/\d+$/", $answer) || $answer == 'You are in a cooldown period for making too many requests')
                 && $secondaryCallback
@@ -98,7 +98,8 @@ class Connection
                 {
                 // just log 'over the limit' errors to the secondary notifier, if any exists, otherwise go with the primary one
                 $exception = new AirbrakeException("Over plan limit, didn't log error: $errorMessage");
-                $exception->setShortDescription('airbrake_api_throttling');
+                $exception->setShortDescription('Airbrake API throttling error');
+                $exception->setLogNamespace('airbrake_api_throttling');
                 call_user_func_array($secondaryCallback, array($exception));
             } elseif($errorNotificationCallback && is_callable($errorNotificationCallback)) {
                 $exception = new AirbrakeException("HTTP response status: $response_status\n\nResponse: $answer\n\nOriginal XML sent: $xml");

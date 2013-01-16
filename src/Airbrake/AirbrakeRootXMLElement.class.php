@@ -79,7 +79,6 @@ class AirbrakeRootXMLElement extends SimpleXMLElement
             }
         }
         // we haven't found the 'key' attribute
-        // TODO wkpo capture and process it
         throw new \Exception('Malformed XML: \'var\' node with no \'key\' attribute');
     }
 
