@@ -159,12 +159,12 @@ class Configuration extends Record
                 && array_key_exists('arguments', $callbackParams)
                 && is_array($callbackParams['arguments'])) )
             {
-                throw new Exception('Incorrect additional callback, check syntax:\n'.var_export($callbackParams, true));
+                throw new \Exception('Incorrect additional callback, check syntax:\n'.var_export($callbackParams, true));
             }
             // call it, and if the result is an array, keep it!
             $callbackResult = call_user_func_array($callbackParams['callback'], $callbackParams['arguments']);
             if (!is_array($callbackResult)) {
-                throw new Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
+                throw new \Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
             }
             return $callbackResult;
         } catch (\Exception $e) {
