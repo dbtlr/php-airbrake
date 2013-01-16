@@ -90,7 +90,7 @@ class Connection
 
         $response_status = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
-        if ($response_status != 200) {
+        if (true || $response_status != 200) { // TODO wkpo
             if ($response_status == 503
                 && (preg_match("/^You've performed too many requests \d+\/\d+$/", $answer) || $answer == 'You are in a cooldown period for making too many requests')
                 && $secondaryCallback
