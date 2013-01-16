@@ -185,7 +185,7 @@ class EventHandler
      * Catches uncaught exceptions.
      *
      * @see http://us3.php.net/manual/en/function.set-exception-handler.php
-     * @param Exception $exception
+     * @param \Exception $exception
      * @param[optional] Configuration $config = null
      * @return bool
      */
@@ -221,7 +221,7 @@ class EventHandler
                 // ini_set failed, just uncap memory altogether
                 ini_set('memory_limit', -1);
             }
-        } catch(Exception $e) {
+        } catch(\Exception $e) {
             ini_set('memory_limit', -1);
         }
 

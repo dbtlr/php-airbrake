@@ -194,7 +194,7 @@ class Configuration extends Record
         if ($callback) {
             try {
                 call_user_func_array($callback, array($airbrakeException));
-            } catch (Exception $ignored) { }
+            } catch (\Exception $ignored) { }
         } elseif($rethrowIfNoCallback) {
             throw $airbrakeException;
         }
