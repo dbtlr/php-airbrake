@@ -211,7 +211,7 @@ class Notice extends Record
                 if (is_callable($callback)) {
                     call_user_func($callback, $doc->asArray());
                 } else {
-                    throw new Exception('Invalid processReportAsArrayCallback provided: '.var_export($callback, true));
+                    throw new \Exception('Invalid processReportAsArrayCallback provided: '.var_export($callback, true));
                 }
             }
         } catch (\Exception $ex) {
