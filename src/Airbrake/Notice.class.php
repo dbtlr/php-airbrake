@@ -126,7 +126,8 @@ class Notice extends Record
     // (as of today, mainly vertical tabs \v)
     private function sanitizeString($s)
     {
-        return preg_replace('/\v/', ' ', $s);
+        $s = preg_replace('/\v/', ' ', $s);
+        return htmlspecialchars($s);
     }
 
     // recursively sanitizes arrays
