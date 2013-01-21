@@ -37,16 +37,18 @@ class Configuration extends Record
     protected $_handleSeamlessly               = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
     protected $_errorReporting                 = E_ALL;   // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
     protected $_silentExceptionClasses         = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
-    protected $_additionalParams               = array(); // any additional params to pass to Airbrake
-    protected $_additionalParamsCallback       = array(); // callbacks to be called when constructing the notice
+    protected $_additionalCgiParams            = array(); // any additional CGI params to pass to Airbrake
+    protected $_additionalCgiParamsCallbacks   = array(); // callbacks to be called when constructing the notice
                                                           // each entry must be an array with 2 keys : 'callback' defining a callback function,
                                                           // and 'arguments' defining an array of arguments to be passed to the callback
                                                           // and finally, each callback must return an array (of params to be included in the notice)
+    protected $_additionalReqParamsCallbacks   = array(); // same as 'additionalCgiParamsCallbacks', but for request params instead
     protected $_errorNotificationCallback      = null;    // a callback that takes an AirbrakeException as a argument
                                                           // used to notify the upper layer
     protected $_delayedNotificationClass       = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
     protected $_secondaryNotificationCallback  = null;    // a callback that takes an AirbrakeException as a argument
                                                           // used to notify the upper layer of secondary errors (like "over the limit" errors when notofying to Airbrake)
+    protected $_processReportAsArrayCallback   = null;    // a callback that takes as argument a nested array generated from the Airbrake XML report, for further processing
 
     /**
      * Load the given data array to the record.
@@ -62,7 +64,7 @@ class Configuration extends Record
 
     /**
      * Initialize the data source.
-     * put any additional params you'd like to be included in the Airbrake record in the 'additionalParams' key
+     * put any additional CGI params you'd like to be included in the Airbrake record in the 'additionalCgiParams' key
      */
     protected function initialize()
     {
@@ -119,38 +121,57 @@ class Configuration extends Record
         }
     }
 
-    public function getAdditionalParams()
+    public function addAdditionalCgiParam($key, $value)
     {
-        $result = $this->get('additionalParams');
-        foreach ($this->get('additionalParamsCallback') as $params) {
-            try {
-                // check the syntax is correct
-                if (! (is_array($params)
-                    && array_key_exists('callback', $params)
-                    && is_callable($params['callback'], false, $callableName)
-                    && array_key_exists('arguments', $params)
-                    && is_array($params['arguments'])) )
-                {
-                    throw new Exception('Incorrect additional callback, check syntax:\n'.var_export($params, true));
-                }
-                // call it, and if the result is an array, keep it!
-                $callbackResult = call_user_func_array($params['callback'], $params['arguments']);
-                if (!is_array($callbackResult)) {
-                    throw new Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
-                }
-                $result = array_merge($result, $callbackResult);
-            } catch (\Exception $e) {
-                // notify the upper layer, but keep reporting the current error anyway
-                $this->notifyUpperLayer($e);
-            }
+        $params = $this->getAdditionalCgiParams();
+        $params[$key] = $value;
+    }
+
+    public function getAdditionalCgiParams()
+    {
+        $result = $this->get('additionalCgiParams');
+        $result = array_merge($result, $this->aggregateCallbackResults($this->get('additionalCgiParamsCallbacks')));
+        return $result;
+    }
+
+    public function getAdditionalReqParams()
+    {
+        return $this->aggregateCallbackResults($this->get('additionalReqParamsCallbacks'));
+    }
+
+    private function aggregateCallbackResults(array $callbacks)
+    {
+        $result = array();
+        foreach ($callbacks as $params) {
+            $callbackResult = $this->callAdditionalCallback($params);
+            $result = array_merge($result, $callbackResult);
         }
         return $result;
     }
 
-    public function addAdditionalParam($key, $value)
+    private function callAdditionalCallback(array $callbackParams)
     {
-        $params = $this->getAdditionalParams();
-        $params[$key] = $value;
+        try {
+            // check that the syntax is correct
+            if (! (is_array($callbackParams)
+                && array_key_exists('callback', $callbackParams)
+                && is_callable($callbackParams['callback'], false, $callableName)
+                && array_key_exists('arguments', $callbackParams)
+                && is_array($callbackParams['arguments'])) )
+            {
+                throw new \Exception('Incorrect additional callback, check syntax:\n'.var_export($callbackParams, true));
+            }
+            // call it, and if the result is an array, keep it!
+            $callbackResult = call_user_func_array($callbackParams['callback'], $callbackParams['arguments']);
+            if (!is_array($callbackResult)) {
+                throw new \Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
+            }
+            return $callbackResult;
+        } catch (\Exception $e) {
+            // notify the upper layer, but keep reporting the current error anyway
+            $this->notifyUpperLayer($e);
+        }
+        return array();
     }
 
     public function notifyUpperLayer(\Exception $e, $rethrowIfNoCallback = false, $secondaryNotification = false)
