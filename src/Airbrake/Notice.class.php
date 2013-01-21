@@ -174,15 +174,10 @@ class Notice extends Record
     const MAX_LEVEL = 10; // the maximum level up to which arrays will be exported (inclusive)
     private function argToString($arg, $level = 1)
     {
-        if (is_object($arg)) {
-            return 'Object '.get_class($arg);
-        } elseif (is_resource($arg)) {
-            return 'Resource '.get_resource_type($arg);
-        } elseif (is_array($arg)) {
-            // can't used a var_export as this might results in an infinite recursion
-            $result = "array (\n";
+        if (is_array($arg) || $arg instanceof Traversable) {
+            $result = $this->singleArgToString($arg)." (\n";
             if ($level > self::MAX_LEVEL) {
-                $result .= '... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...';
+                $result .= "... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...\n";
             } else {
                 $prefix = $this->buildArrayPrefix($level);
                 foreach ($arg as $key => $value) {
@@ -191,6 +186,19 @@ class Notice extends Record
             }
             $result .= ')';
             return $result;
+        } else {
+            return $this->singleArgToString($arg);
+        }
+    }
+
+    private function singleArgToString($arg)
+    {
+        if (is_object($arg)) {
+            return 'Object '.get_class($arg);
+        } elseif (is_resource($arg)) {
+            return 'Resource '.get_resource_type($arg);
+        } elseif (is_array($arg)) {
+            return 'array';
         } else {
             // should be a scalar then
             return gettype($arg).' '.var_export($arg, true);
