@@ -26,7 +26,7 @@ class AirbrakeRootXMLElement extends SimpleXMLElement
     // pretty ugly to resort to static functions, but SimpleXMLElement's constructor is final...
     private static function XMLElementToArray(SimpleXMLElement $node, $pathSoFar = '')
     {
-        $value = (string) $node;
+        $value = self::getExportValue($node);
         if ($value) {
             return $value;
         } else {
@@ -80,6 +80,23 @@ class AirbrakeRootXMLElement extends SimpleXMLElement
         }
         // we haven't found the 'key' attribute
         throw new \Exception('Malformed XML: \'var\' node with no \'key\' attribute');
+    }
+
+    // returns the exportable value of a simple node
+    // (tries to stick as much as possible to the native types)
+    private static function getExportValue(SimpleXMLElement $node)
+    {
+        $result = (string) $node;
+        if (!$result) {
+            return null;
+        }
+        if (is_numeric($result)) {
+            $result = (float) $result;
+            if ((int) $result == $result) {
+                $result = (int) $result;
+            }
+        }
+        return $result;
     }
 
 }
