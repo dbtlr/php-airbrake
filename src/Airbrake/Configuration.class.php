@@ -31,7 +31,9 @@ class Configuration extends Record
     protected $_url;
     protected $_hostname;
     protected $_queue;
-    protected $_apiEndPoint                    = 'http://api.airbrake.io/notifier_api/v2/notices';
+    # old endpoint: http://api.airbrake.io/notifier_api/v2/notices
+    # see: http://help.airbrake.io/kb/accounts-2/introducing-airbrake-v2
+    protected $_apiEndPoint                    = 'http://collect.airbrake.io/notifier_api/v2/notices';
     protected $_validateXML                    = false;   // set to true to validate the generated XML against a XSD file (see the XML validation class)
     protected $_errorPrefix                    = null;    // appended to all reports' titles
     protected $_handleSeamlessly               = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
