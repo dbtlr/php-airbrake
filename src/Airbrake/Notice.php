@@ -56,7 +56,7 @@ class Notice extends Record
 
         $error = $doc->addChild('error');
         $error->addChild('class', $this->errorClass);
-        $error->addChild('message', $this->errorMessage);
+        $error->addChild('message', htmlspecialchars($this->errorMessage));
 
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
