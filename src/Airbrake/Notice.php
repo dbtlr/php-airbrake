@@ -61,10 +61,12 @@ class Notice extends Record
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
             foreach ($this->backtrace as $entry) {
+                $method = isset($entry['class']) ? $entry['class'].'::' : '';
+                $method .= isset($entry['function']) ? $entry['function'] : '';
                 $line = $backtrace->addChild('line');
                 $line->addAttribute('file', isset($entry['file']) ? $entry['file'] : '');
                 $line->addAttribute('number', isset($entry['line']) ? $entry['line'] : '');
-                $line->addAttribute('method', isset($entry['function']) ? $entry['function'] : '');
+                $line->addAttribute('method', $method);
             }
         }
 
