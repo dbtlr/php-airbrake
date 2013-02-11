@@ -31,6 +31,11 @@ class Notice extends Record
      */
     protected $_errorMessage = null;
 
+    // the max length for a string listing all the arguments of a function
+    const MAX_ALL_ARGS_STRING_LENGTH   = 1000;
+    // the max length for a string representing a single argument of a function
+    const MAX_SINGLE_ARG_STRING_LENGTH = 200;
+
     /**
      * Convert the notice to xml
      * see doc @ http://help.airbrake.io/kb/api-2/notifier-api-version-22
@@ -163,7 +168,12 @@ class Notice extends Record
         } else {
             $args = array();
         }
-        $result .= '('.implode(', ', $args).')';
+        $argsAsString = implode(', ', $args);
+        if (strlen($argsAsString) > self::MAX_ALL_ARGS_STRING_LENGTH) {
+            $argsAsString = substr($argsAsString, 0, self::MAX_ALL_ARGS_STRING_LENGTH);
+            $argsAsString .= ' ... [ARGS LIST TRUNCATED]';
+        }
+        $result .= '('.$argsAsString.')';
 
         return $result;
     }
@@ -174,6 +184,9 @@ class Notice extends Record
     const MAX_LEVEL = 10; // the maximum level up to which arrays will be exported (inclusive)
     private function argToString($arg, $level = 1)
     {
+        if ($arg === null) {
+            return 'NULL';
+        }
         if (is_array($arg) || $arg instanceof Traversable) {
             $result = $this->singleArgToString($arg)." (\n";
             if ($level > self::MAX_LEVEL) {
@@ -185,10 +198,14 @@ class Notice extends Record
                 }
             }
             $result .= ')';
-            return $result;
         } else {
-            return $this->singleArgToString($arg);
+            $result = $this->singleArgToString($arg);
         }
+        if (strlen($result) > self::MAX_SINGLE_ARG_STRING_LENGTH) {
+            $result = substr($result, 0, self::MAX_SINGLE_ARG_STRING_LENGTH);
+            $result .= ' ... [ARG TRUNCATED]';
+        }
+        return $result;
     }
 
     private function singleArgToString($arg)
