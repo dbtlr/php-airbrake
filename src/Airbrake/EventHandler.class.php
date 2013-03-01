@@ -27,6 +27,12 @@ class EventHandler
     protected $notifyOnWarning = null;
     protected $configuration   = null;
 
+    // We want to avoid creating infinite loops when reporting,
+    // so we'll only accept an 'Airbrake stack' at most that deep
+    // (past that level we just ignore incoming errors)
+    const MAX_AIRBRAKE_STACK_DEPTH = 2;
+    // the current stack depth
+    private $currentAirbrakeStackDepth;
 
     // Minimum amount of memory required to actually report fatal errors to Airbrake
     // useful when reporting "out of memory" errors
@@ -65,6 +71,8 @@ class EventHandler
         $this->airbrakeClient = $client;
 
         $this->handledErrors = array();
+
+        $this->currentAirbrakeStackDepth = 0;
     }
 
     /**
@@ -147,6 +155,16 @@ class EventHandler
      */
     public function onError($type, $message, $file = null, $line = null, $context = null)
     {
+        // if the seamless mode is activated, return false to let the error bubble up
+        // otherwise, return true to stop it here (see set_error_handler doc)
+        // return false;
+        $result = !($this->configuration && $this->configuration->get('handleSeamlessly'));
+
+        // prevent infinite loops
+        if (!$this->incrementStackTraceDepth()) {
+            return $result;
+        }
+
         // remember this error
         try {
             $this->handledErrors[$this->hashError($type, $message, $file, $line)] = true;
@@ -155,27 +173,24 @@ class EventHandler
 
         // This will catch silenced @ function calls and keep them quiet.
         if (ini_get('error_reporting') == 0) {
-            return true;
+            return $result;
         }
 
-        // if the seamless mode is activated, return false to let the error bubble up
-        // otherwise, return true to stop it here (see set_error_handler doc)
-        // return false;
-        $result = !($this->configuration && $this->configuration->get('handleSeamlessly'));
-
         // check whether we want to report this error
-        if ($this->configuration && $this->configuration->exists('errorReporting') &&
-            !($this->configuration->get('errorReporting') & $type))
+        if ($this->configuration && $this->configuration->exists('errorReporting')
+            && !($this->configuration->get('errorReporting') & $type))
         {
             return $result;
         }
 
         $backtrace = debug_backtrace();
-        array_shift( $backtrace );
+        array_shift($backtrace);
 
         $message = sprintf('A PHP error occurred (%s). %s', $this->errorNames[$type], $message);
 
         $this->airbrakeClient->notifyOnError($message, $file, $line, $backtrace);
+
+        $this->decrementStackTraceDepth();
 
         return $result;
     }
@@ -191,6 +206,11 @@ class EventHandler
      */
     public function onException(\Exception $exception, Configuration $config = null)
     {
+        // prevent infinite loops
+        if (!$this->incrementStackTraceDepth()) {
+            return true;
+        }
+
         if ($config && in_array(
             get_class($exception),
             $config->get('silentExceptionClasses'))) {
@@ -200,6 +220,8 @@ class EventHandler
             // business as usual
             $this->airbrakeClient->notifyOnException($exception);
         }
+
+        $this->decrementStackTraceDepth();
 
         return true;
     }
@@ -291,6 +313,21 @@ class EventHandler
         return hash('md5', $hashedString);
     }
 
+    // increments the stack trace, and returns true iff we should report the error on hand
+    private function incrementStackTraceDepth()
+    {
+        if ($this->currentAirbrakeStackDepth < self::MAX_AIRBRAKE_STACK_DEPTH) {
+            $this->currentAirbrakeStackDepth++;
+            return true;
+        }
+        return false;
+    }
+
+    private function decrementStackTraceDepth()
+    {
+        $this->currentAirbrakeStackDepth--;
+    }
+
     // converts a string of the form '10G' or '5T' or '8M' to the corresponding number of bytes
     // TODO: if we need more helper functions around here, we should move them, including this one, to a separate file
     private static function nbBytesStringToInt($s)
@@ -314,6 +351,6 @@ class EventHandler
             }
             return $n;
         }, (string) $s);
-}
+    }
 
 }
