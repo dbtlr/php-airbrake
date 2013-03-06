@@ -99,4 +99,20 @@ class AirbrakeRootXMLElement extends SimpleXMLElement
         return $result;
     }
 
+    // tries to find $node's child with given $name
+    // if not found, throws an exception except if $addIfNotFound is true
+    public static function findChild(SimpleXMLElement &$node, $name, $addIfNotFound = false)
+    {
+        foreach ($node->children() as $child) {
+            if ($child->getName() == $name) {
+                return $child;
+            }
+        }
+        if ($addIfNotFound) {
+            return $node->addChild($name);
+        } else {
+            throw new \Exception($node->getName().' has no child '.$name);
+        }
+    }
+
 }

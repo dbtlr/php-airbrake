@@ -31,8 +31,15 @@ class Notice extends Record
      */
     protected $_errorMessage = null;
 
+    /**
+     * The ID of the record saved in the local DB (if applicable)
+     */
+    protected $_dbId = null;
+
     // the max length for a string listing all the arguments of a function
-    const MAX_ALL_ARGS_STRING_LENGTH   = 1000;
+    const MAX_ALL_ARGS_STRING_LENGTH   = 5000;
+    // the max length for a string representing an array argument of a function
+    const MAX_ARRAY_ARG_STRING_LENGTH  = 1000;
     // the max length for a string representing a single argument of a function
     const MAX_SINGLE_ARG_STRING_LENGTH = 200;
 
@@ -65,7 +72,7 @@ class Notice extends Record
             $errorPrefix = $configuration->get('errorPrefix').' - ';
         }
         $message = ($errorPrefix ?: '').$this->errorMessage;
-        $error->addChild('message', $this->sanitize($message));
+        $error->addChild('message', self::sanitize($message));
 
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
@@ -93,11 +100,11 @@ class Notice extends Record
                                       'time'             => date('c'),
                                       'timestamp'        => time())
                                 );
-        $this->array2Node($request, 'params', $this->sanitize($configuration->getParameters()));
-        $this->array2Node($request, 'session', $this->sanitize($configuration->get('sessionData')));
-        $this->array2Node($request, 'cgi-data', $this->sanitize($cgi_data));
+        $this->array2Node($request, 'params', self::sanitize($configuration->getParameters()));
+        $this->array2Node($request, 'session', self::sanitize($configuration->get('sessionData')));
+        $this->array2Node($request, 'cgi-data', self::sanitize($cgi_data));
 
-        $this->callProcessAsArrayCallback($doc, $configuration);
+        $this->saveInLocalDB($doc, $configuration);
 
         return $doc->asXML();
     }
@@ -120,29 +127,32 @@ class Notice extends Record
             if (is_array($value) || is_object($value)) {
                 $value = json_encode((array) $value);
             }
-            
-            // htmlspecialchars() is needed to prevent html characters from breaking the node.
-            $node->addChild('var', htmlspecialchars($value))
-                 ->addAttribute('key', $key);
+            self::addVarToNode($node, $key, $value);
         }
+    }
+
+    private static function addVarToNode(SimpleXMLElement &$node, $key, $value)
+    {
+        $node->addChild('var', self::sanitizeString($value))
+             ->addAttribute('key', $key);
     }
 
     // cleans the inputs from chars not supported by SimpleXMLElements
     // (as of today, mainly vertical tabs \v)
-    private function sanitizeString($s)
+    private static function sanitizeString($s)
     {
         $s = preg_replace('/\v/', ' ', $s);
         return htmlspecialchars($s);
     }
 
     // recursively sanitizes arrays
-    private function sanitize($a)
+    private static function sanitize($a)
     {
         if (is_string($a)) {
-            return $this->sanitizeString($a);
+            return self::sanitizeString($a);
         } elseif(is_array($a)) {
             foreach ($a as $key => $value) {
-                $a[$key] = $this->sanitize($value);
+                $a[$key] = self::sanitize($value);
             }
         }
         return $a;
@@ -184,6 +194,7 @@ class Notice extends Record
     const MAX_LEVEL = 10; // the maximum level up to which arrays will be exported (inclusive)
     private function argToString($arg, $level = 1)
     {
+        $maxLength = self::MAX_SINGLE_ARG_STRING_LENGTH;
         if ($arg === null) {
             return 'NULL';
         }
@@ -198,10 +209,11 @@ class Notice extends Record
                 }
             }
             $result .= ')';
+            $maxLength = self::MAX_ARRAY_ARG_STRING_LENGTH;
         } else {
             $result = $this->singleArgToString($arg);
         }
-        if (strlen($result) > self::MAX_SINGLE_ARG_STRING_LENGTH) {
+        if (strlen($result) > $maxLength) {
             $result = substr($result, 0, self::MAX_SINGLE_ARG_STRING_LENGTH);
             $result .= ' ... [ARG TRUNCATED]';
         }
@@ -229,16 +241,21 @@ class Notice extends Record
         return str_repeat(' ', $level * self::BASE_ARRAY_PREFIX_LENGTH);
     }
 
-    private function callProcessAsArrayCallback(AirbrakeRootXMLElement $doc, Configuration $configuration)
+    private function saveInLocalDB(AirbrakeRootXMLElement &$doc, Configuration $configuration)
     {
         try {
-            $callback = $configuration->get('processReportAsArrayCallback');
-            if ($callback) {
-                if (is_callable($callback)) {
-                    call_user_func($callback, $doc->asArray());
-                } else {
-                    throw new \Exception('Invalid processReportAsArrayCallback provided: '.var_export($callback, true));
+            if ($arrayReportDatabaseClass = $configuration->get('arrayReportDatabaseClass')) {
+                if (!($dbObject = $arrayReportDatabaseClass::logInDB($doc->asArray()))) {
+                    throw new \Exception('Error while logging Airbrake report into DB');
                 }
+                // we need to add the DB ID to the report
+                if (!($dbId = $dbObject->getId()) || !($dbStringId = $dbObject->getStringId())) {
+                    throw new \Exception('Couldn\'t retrieve ID for DB object '.var_export($dbObject, true));
+                }
+                $this->set('dbId', $dbId);
+                $requestNode = AirbrakeRootXMLElement::findChild($doc, 'request', true);
+                $cgiDataNode = AirbrakeRootXMLElement::findChild($requestNode, 'cgi-data', true);
+                self::addVarToNode($cgiDataNode, 'dbId', $dbStringId);
             }
         } catch (\Exception $ex) {
             $configuration->notifyUpperLayer($ex);

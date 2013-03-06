@@ -50,7 +50,7 @@ class Configuration extends Record
     protected $_delayedNotificationClass       = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
     protected $_secondaryNotificationCallback  = null;    // a callback that takes an AirbrakeException as a argument
                                                           // used to notify the upper layer of secondary errors (like "over the limit" errors when notofying to Airbrake)
-    protected $_processReportAsArrayCallback   = null;    // a callback that takes as argument a nested array generated from the Airbrake XML report, for further processing
+    protected $_arrayReportDatabaseClass       = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
 
     /**
      * Load the given data array to the record.
@@ -116,10 +116,17 @@ class Configuration extends Record
             throw new AirbrakeException(
                 'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
         }
-        if (($delayedNotifClass = $this->get('delayedNotificationClass'))
-            && !array_key_exists('Airbrake\IDelayedNotification', class_implements($delayedNotifClass)))
+        $this->checkOptionClassImplements('delayedNotificationClass', 'IDelayedNotification');
+        $this->checkOptionClassImplements('arrayReportDatabaseClass', 'IArrayReportDatabaseObject');
+    }
+
+    // throws an exception if the given key is set to a class that doesn't implement the given interface
+    private function checkOptionClassImplements($key, $interface)
+    {
+        if (($class = $this->get($key))
+            && !array_key_exists('Airbrake\\'.$interface, class_implements($class)))
         {
-            throw new AirbrakeException("delayedNotificationClass $delayedNotifClass does not implement IDelayedNotification");
+            throw new AirbrakeException("$key $class does not implement $interface");
         }
     }
 
