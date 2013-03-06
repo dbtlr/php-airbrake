@@ -51,6 +51,8 @@ class Configuration extends Record
     protected $_secondaryNotificationCallback  = null;    // a callback that takes an AirbrakeException as a argument
                                                           // used to notify the upper layer of secondary errors (like "over the limit" errors when notofying to Airbrake)
     protected $_arrayReportDatabaseClass       = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
+    protected $_sendArgumentsToAirbrake        = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
+                                                          // sensitive data in your Airbrake reports)
 
     /**
      * Load the given data array to the record.

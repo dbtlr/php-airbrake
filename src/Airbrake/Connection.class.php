@@ -131,7 +131,9 @@ class Connection
     {
         $xmlResponse = new \SimpleXMLElement($answer);
         if ($url = $xmlResponse->url) {
-            $dbReportClass::updateLinkById($dbId, $url);
+            if (!$dbReportClass::updateLinkById($dbId, $url)) {
+                throw new \Exception('Error when updating report with DB ID'.$dbId);
+            }
         } else {
             throw new \Exception('Malformed answer');
         }

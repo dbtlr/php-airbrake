@@ -74,13 +74,16 @@ class Notice extends Record
         $message = ($errorPrefix ?: '').$this->errorMessage;
         $error->addChild('message', self::sanitize($message));
 
+        // do we need to compute backtrace arguments?
+        $computeArgs = $configuration->sendArgumentsToAirbrake || (bool) $configuration->arrayReportDatabaseClass;
+
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
             foreach ($this->backtrace as $entry) {
                 $line = $backtrace->addChild('line');
                 $line->addAttribute('file', isset($entry['file']) ? $entry['file'] : '');
                 $line->addAttribute('number', isset($entry['line']) ? $entry['line'] : '');
-                $method = $this->getMethodString($entry);
+                $method = self::getMethodString($entry, $computeArgs);
                 if ($method !== null) {
                     $line->addAttribute('method', $method);
                 }
@@ -105,6 +108,11 @@ class Notice extends Record
         $this->array2Node($request, 'cgi-data', self::sanitize($cgi_data));
 
         $this->saveInLocalDB($doc, $configuration);
+
+        if ($computeArgs && !$configuration->sendArgumentsToAirbrake) {
+            // we need to remove the arguments from the backtrace before sending them to Airbrake
+            self::pruneArgs($doc);
+        }
 
         return $doc->asXML();
     }
@@ -159,7 +167,8 @@ class Notice extends Record
     }
 
     // generates the "method" string to be included in AB's record, from a backtrace entry
-    private function getMethodString(array $entry)
+    // set $computeArgs to false to not compute them
+    private static function getMethodString(array $entry, $computeArgs = true)
     {
         if (!isset($entry['function'])) {
             return null;
@@ -172,18 +181,20 @@ class Notice extends Record
             $result = $entry['class'].$entry['type'].$result;
         }
 
-        // append arguments
-        if (isset($entry['args'])) {
-            $args = array_map(array($this, 'argToString'), $entry['args']);
-        } else {
-            $args = array();
+        // append arguments, if necessary
+        if ($computeArgs) {
+            if (isset($entry['args'])) {
+                $args = array_map(array('self', 'argToString'), $entry['args']);
+            } else {
+                $args = array();
+            }
+            $argsAsString = implode(', ', $args);
+            if (strlen($argsAsString) > self::MAX_ALL_ARGS_STRING_LENGTH) {
+                $argsAsString = substr($argsAsString, 0, self::MAX_ALL_ARGS_STRING_LENGTH);
+                $argsAsString .= ' ... [ARGS LIST TRUNCATED]';
+            }
+            $result .= '('.$argsAsString.')';
         }
-        $argsAsString = implode(', ', $args);
-        if (strlen($argsAsString) > self::MAX_ALL_ARGS_STRING_LENGTH) {
-            $argsAsString = substr($argsAsString, 0, self::MAX_ALL_ARGS_STRING_LENGTH);
-            $argsAsString .= ' ... [ARGS LIST TRUNCATED]';
-        }
-        $result .= '('.$argsAsString.')';
 
         return $result;
     }
@@ -192,27 +203,29 @@ class Notice extends Record
     // resources by their type
     // and all others are var_export'ed
     const MAX_LEVEL = 10; // the maximum level up to which arrays will be exported (inclusive)
-    private function argToString($arg, $level = 1)
+    private static function argToString($arg, $level = 1)
     {
-        $maxLength = self::MAX_SINGLE_ARG_STRING_LENGTH;
         if ($arg === null) {
             return 'NULL';
         }
+
+        $maxLength = self::MAX_SINGLE_ARG_STRING_LENGTH;
         if (is_array($arg) || $arg instanceof Traversable) {
-            $result = $this->singleArgToString($arg)." (\n";
+            $result = self::singleArgToString($arg)." (\n";
             if ($level > self::MAX_LEVEL) {
                 $result .= "... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...\n";
             } else {
-                $prefix = $this->buildArrayPrefix($level);
+                $prefix = self::buildArrayPrefix($level);
                 foreach ($arg as $key => $value) {
-                    $result .= $prefix.var_export($key, true).' => '.$this->argToString($value, $level + 1).",\n";
+                    $result .= $prefix.var_export($key, true).' => '.self::argToString($value, $level + 1).",\n";
                 }
             }
             $result .= ')';
             $maxLength = self::MAX_ARRAY_ARG_STRING_LENGTH;
         } else {
-            $result = $this->singleArgToString($arg);
+            $result = self::singleArgToString($arg);
         }
+
         if (strlen($result) > $maxLength) {
             $result = substr($result, 0, self::MAX_SINGLE_ARG_STRING_LENGTH);
             $result .= ' ... [ARG TRUNCATED]';
@@ -220,7 +233,7 @@ class Notice extends Record
         return $result;
     }
 
-    private function singleArgToString($arg)
+    private static function singleArgToString($arg)
     {
         if (is_object($arg)) {
             return 'Object '.get_class($arg);
@@ -236,7 +249,7 @@ class Notice extends Record
 
     // # of spaces in the base array prefix
     const BASE_ARRAY_PREFIX_LENGTH = 2;
-    private function buildArrayPrefix($level)
+    private static function buildArrayPrefix($level)
     {
         return str_repeat(' ', $level * self::BASE_ARRAY_PREFIX_LENGTH);
     }
@@ -253,12 +266,40 @@ class Notice extends Record
                     throw new \Exception('Couldn\'t retrieve ID for DB object '.var_export($dbObject, true));
                 }
                 $this->set('dbId', $dbId);
-                $requestNode = AirbrakeRootXMLElement::findChild($doc, 'request', true);
-                $cgiDataNode = AirbrakeRootXMLElement::findChild($requestNode, 'cgi-data', true);
+                $requestNode = self::findOrAddChild($doc, 'request');
+                $cgiDataNode = self::findOrAddChild($requestNode, 'cgi-data');
                 self::addVarToNode($cgiDataNode, 'dbId', $dbStringId);
             }
         } catch (\Exception $ex) {
             $configuration->notifyUpperLayer($ex);
         }
     }
+
+    // tries to find $node's child with given $name, adds it if it doesn't exist
+    private static function findOrAddChild(SimpleXMLElement &$node, $name)
+    {
+        if ($node->$name) {
+            return $node->$name;
+        }
+        return $node->addChild($name);
+    }
+
+    // deletes arguments from the backtrace
+    // useful when we want to save them to a local DB but not send them to Airbrake
+    // admittedly not the prettiest piece of code out there, but does the job in a cheap way
+    private static function pruneArgs(SimpleXMLElement &$doc)
+    {
+        $backtraceNode = $doc->error->backtrace;
+        if (!$backtraceNode || !$backtraceNode->line) {
+            return;
+        }
+
+        for ($i = 0; $i < $backtraceNode->line->count(); $i++) {
+            $method = $backtraceNode->line[$i]['method'];
+            if ($method && ($pos = strpos($method, '(')) !== false) {
+                $doc->error->backtrace->line[$i]['method'] = substr($method, 0, $pos);
+            }
+        }
+    }
+
 }
