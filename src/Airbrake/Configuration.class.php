@@ -53,9 +53,16 @@ class Configuration extends Record
     protected $_arrayReportDatabaseClass       = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
     protected $_sendArgumentsToAirbrake        = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
                                                           // sensitive data in your Airbrake reports)
-    protected $_blacklistedScalarArgs          = array(); // an array of scalars that won't ever be reported in the backtraces' arguments
-    protected $_blacklistedRegexArgs           = array(); // an array of regular expressions that will prevent any scalar matching them from being
+    protected $_blacklistedScalarArgsCallback  = null;    // a callback that returns an array of scalars that won't ever be reported in the backtraces' arguments
+    protected $_blacklistedRegexArgsCallback   = null;    // a callback that returns an array of regular expressions that will prevent any scalar matching them from being
                                                           // included into the backtraces' arguments
+
+
+    /* Interval vars, not too be set by the user */
+    protected $__blacklistedScalarArgsCache    = null;
+    protected $__blacklistedRegexArgsCache     = null;
+    protected $__blacklistCacheComputed        = false;
+
 
     /**
      * Load the given data array to the record.
@@ -165,18 +172,27 @@ class Configuration extends Record
 
     private function callAdditionalCallback(array $callbackParams)
     {
+        // check that the syntax is correct
+        if (!is_array($callbackParams)
+            || !array_key_exists('callback', $callbackParams)
+            || !array_key_exists('arguments', $callbackParams)
+            || !is_array($callbackParams['arguments'])
+            )
+        {
+            $this->notifyUpperLayer(new \Exception('Incorrect callback, check syntax:\n'.var_export($callbackParams, true)));
+        }
+        return $this->executeCallbackReturningArray($callbackParams['callback'], $callbackParams['arguments']);
+    }
+
+    // executes a callback that's expected to return an arrray
+    private function executeCallbackReturningArray($callback, array $arguments = array())
+    {
         try {
-            // check that the syntax is correct
-            if (! (is_array($callbackParams)
-                && array_key_exists('callback', $callbackParams)
-                && is_callable($callbackParams['callback'], false, $callableName)
-                && array_key_exists('arguments', $callbackParams)
-                && is_array($callbackParams['arguments'])) )
-            {
-                throw new \Exception('Incorrect additional callback, check syntax:\n'.var_export($callbackParams, true));
+            if (!is_callable($callback, false, $callableName)) {
+                throw new \Exception(var_export($callback, true).' is not a valid callback!');
             }
-            // call it, and if the result is an array, keep it!
-            $callbackResult = call_user_func_array($callbackParams['callback'], $callbackParams['arguments']);
+            // call it, and keep the result if it's an array
+            $callbackResult = call_user_func_array($callback, $arguments);
             if (!is_array($callbackResult)) {
                 throw new \Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
             }
@@ -184,8 +200,9 @@ class Configuration extends Record
         } catch (\Exception $e) {
             // notify the upper layer, but keep reporting the current error anyway
             $this->notifyUpperLayer($e);
+            \w4lLog::debug('on return un array??');
+            return array();
         }
-        return array();
     }
 
     public function notifyUpperLayer(\Exception $e, $rethrowIfNoCallback = false, $secondaryNotification = false)
@@ -214,13 +231,36 @@ class Configuration extends Record
         }
     }
 
+    private function buildBlacklistCache()
+    {
+        if ($this->get('_blacklistCacheComputed')) {
+            return;
+        }
+        $this->set('_blacklistCacheComputed', true);
+        // scalars
+        if ($scalarCallback = $this->get('blacklistedScalarArgsCallback')) {
+            $scalarCache = $this->executeCallbackReturningArray($scalarCallback);
+        } else {
+            $scalarCache = array();
+        }
+        $this->set('_blacklistedScalarArgsCache', $scalarCache);
+        // and regexes
+        if ($regexCallback = $this->get('blacklistedRegexArgsCallback')) {
+            $regexCache = $this->executeCallbackReturningArray($regexCallback);
+        } else {
+            $regexCache = array();
+        }
+        $this->set('_blacklistedRegexArgsCache', $regexCache);
+    }
+
     public function isScalarBlackListed($arg)
     {
         $arg = (string) $arg;
-        if (in_array($arg, $this->blacklistedScalarArgs)) {
+        $this->buildBlacklistCache();
+        if (in_array($arg, $this->get('_blacklistedScalarArgsCache'))) {
             return true;
         }
-        foreach ($this->blacklistedRegexArgs as $regex) {
+        foreach ($this->get('_blacklistedRegexArgsCache') as $regex) {
             if (preg_match($regex, $arg)) {
                 return true;
             }
