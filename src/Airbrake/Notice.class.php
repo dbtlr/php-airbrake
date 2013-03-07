@@ -83,7 +83,7 @@ class Notice extends Record
                 $line = $backtrace->addChild('line');
                 $line->addAttribute('file', isset($entry['file']) ? $entry['file'] : '');
                 $line->addAttribute('number', isset($entry['line']) ? $entry['line'] : '');
-                $method = self::getMethodString($entry, $computeArgs);
+                $method = self::getMethodString($entry, $configuration, $computeArgs);
                 if ($method !== null) {
                     $line->addAttribute('method', $method);
                 }
@@ -168,7 +168,7 @@ class Notice extends Record
 
     // generates the "method" string to be included in AB's record, from a backtrace entry
     // set $computeArgs to false to not compute them
-    private static function getMethodString(array $entry, $computeArgs = true)
+    private static function getMethodString(array $entry, Configuration $configuration, $computeArgs = true)
     {
         if (!isset($entry['function'])) {
             return null;
@@ -183,10 +183,11 @@ class Notice extends Record
 
         // append arguments, if necessary
         if ($computeArgs) {
+            $args = array();
             if (isset($entry['args'])) {
-                $args = array_map(array('self', 'argToString'), $entry['args']);
-            } else {
-                $args = array();
+                foreach ($entry['args'] as $arg) {
+                    $args[] = self::argToString($arg, $configuration);
+                }
             }
             $argsAsString = implode(', ', $args);
             if (strlen($argsAsString) > self::MAX_ALL_ARGS_STRING_LENGTH) {
@@ -203,7 +204,7 @@ class Notice extends Record
     // resources by their type
     // and all others are var_export'ed
     const MAX_LEVEL = 10; // the maximum level up to which arrays will be exported (inclusive)
-    private static function argToString($arg, $level = 1)
+    private static function argToString($arg, Configuration $configuration, $level = 1)
     {
         if ($arg === null) {
             return 'NULL';
@@ -211,19 +212,19 @@ class Notice extends Record
 
         $maxLength = self::MAX_SINGLE_ARG_STRING_LENGTH;
         if (is_array($arg) || $arg instanceof Traversable) {
-            $result = self::singleArgToString($arg)." (\n";
+            $result = self::singleArgToString($arg, $configuration)." (\n";
             if ($level > self::MAX_LEVEL) {
                 $result .= "... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...\n";
             } else {
                 $prefix = self::buildArrayPrefix($level);
                 foreach ($arg as $key => $value) {
-                    $result .= $prefix.var_export($key, true).' => '.self::argToString($value, $level + 1).",\n";
+                    $result .= $prefix.var_export($key, true).' => '.self::argToString($value, $configuration, $level + 1).",\n";
                 }
             }
             $result .= ')';
             $maxLength = self::MAX_ARRAY_ARG_STRING_LENGTH;
         } else {
-            $result = self::singleArgToString($arg);
+            $result = self::singleArgToString($arg, $configuration);
         }
 
         if (strlen($result) > $maxLength) {
@@ -233,7 +234,7 @@ class Notice extends Record
         return $result;
     }
 
-    private static function singleArgToString($arg)
+    private static function singleArgToString($arg, Configuration $configuration)
     {
         if (is_object($arg)) {
             return 'Object '.get_class($arg);
@@ -241,8 +242,11 @@ class Notice extends Record
             return 'Resource '.get_resource_type($arg);
         } elseif (is_array($arg)) {
             return 'array';
+        // should be a scalar then, let's see if it's blacklisted
+        } elseif($configuration->isScalarBlackListed($arg)) {
+            return '[BLACKLISTED SCALAR]';
         } else {
-            // should be a scalar then
+            // a scalar, not blacklisted!
             return gettype($arg).' '.var_export($arg, true);
         }
     }

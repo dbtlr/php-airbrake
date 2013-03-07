@@ -92,11 +92,10 @@ class Connection
         $responseStatus = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         if ($responseStatus != 200) {
-            if ($responseStatus == 503
-                && (preg_match("/^You've performed too many requests \d+\/\d+$/", $answer) || $answer == 'You are in a cooldown period for making too many requests')
+            if (self::isThrottlingErrorMessage($responseStatus, $answer)
                 && $secondaryCallback
                 && is_callable($secondaryCallback))
-                {
+            {
                 // just log 'over the limit' errors to the secondary notifier, if any exists, otherwise go with the primary one
                 $exception = new AirbrakeException("Over plan limit, didn't log error: $errorMessage");
                 $exception->setShortDescription('Airbrake API throttling error');
@@ -137,6 +136,15 @@ class Connection
         } else {
             throw new \Exception('Malformed answer');
         }
+    }
+
+    // returns true iff the resulting error message says we posted over the plan limit
+    private static function isThrottlingErrorMessage($responseStatus, $message)
+    {
+        return $responseStatus == 429 && preg_match('/Project \d+ is rate limited\. Please upgrade your account\./', $message)
+            || $responseStatus == 503
+                && (preg_match("/^You've performed too many requests \d+\/\d+$/", $message)
+                || $message == 'You are in a cooldown period for making too many requests');
     }
 
 }

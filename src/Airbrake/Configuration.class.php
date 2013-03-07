@@ -53,6 +53,9 @@ class Configuration extends Record
     protected $_arrayReportDatabaseClass       = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
     protected $_sendArgumentsToAirbrake        = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
                                                           // sensitive data in your Airbrake reports)
+    protected $_blacklistedScalarArgs          = array(); // an array of scalars that won't ever be reported in the backtraces' arguments
+    protected $_blacklistedRegexArgs           = array(); // an array of regular expressions that will prevent any scalar matching them from being
+                                                          // included into the backtraces' arguments
 
     /**
      * Load the given data array to the record.
@@ -209,6 +212,20 @@ class Configuration extends Record
         } elseif($rethrowIfNoCallback) {
             throw $airbrakeException;
         }
+    }
+
+    public function isScalarBlackListed($arg)
+    {
+        $arg = (string) $arg;
+        if (in_array($arg, $this->blacklistedScalarArgs)) {
+            return true;
+        }
+        foreach ($this->blacklistedRegexArgs as $regex) {
+            if (preg_match($regex, $arg)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }
