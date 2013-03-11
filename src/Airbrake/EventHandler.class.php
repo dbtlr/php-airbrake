@@ -59,6 +59,9 @@ class EventHandler
     private static $previousExceptionHandler = null;
     // an array containing the hashes of the handled errors to avoid reporting them again on shutdown
     private $handledErrors;
+    // a flag to say if the shutdown function has already been called on that handler or not
+    // to prevent infinite loops in the shutdown handler
+    private $shutdownCalled;
 
     /**
      * Build with the Airbrake client class.
@@ -71,7 +74,7 @@ class EventHandler
         $this->airbrakeClient = $client;
 
         $this->handledErrors = array();
-
+        $this->shutdownCalled = false;
         $this->currentAirbrakeStackDepth = 0;
     }
 
@@ -85,7 +88,7 @@ class EventHandler
      */
     public static function start($apiKey, $notifyOnWarning=false, array $options=array())
     {
-        if ( !isset(self::$instance)) {
+        if (!isset(self::$instance)) {
             $config = new Configuration($apiKey, $options);
 
             $client = new Client($config);
@@ -234,6 +237,15 @@ class EventHandler
      */
     public function onShutdown()
     {
+        // This will help prevent multiple calls to this, in case the shutdown handler was declared
+        // multiple times. This should only occur in unit tests, when the handlers are created
+        // and removed repeatedly. As we cannot remove shutdown handlers, this prevents us from
+        // calling it 1000 times at the end.
+        if ($this->shutdownCalled) {
+            return;
+        }
+        $this->shutdownCalled = true;
+
         // try to get some additional memory (useful when reporting "out of memory" errors)
         try {
             if (!ini_set(
@@ -246,17 +258,6 @@ class EventHandler
         } catch(\Exception $e) {
             ini_set('memory_limit', -1);
         }
-
-        // If the instance was unset, then we shouldn't run.
-        if (self::$instance == null) {
-            return;
-        }
-
-        // This will help prevent multiple calls to this, in case the shutdown handler was declared
-        // multiple times. This should only occur in unit tests, when the handlers are created
-        // and removed repeatedly. As we cannot remove shutdown handlers, this prevents us from
-        // calling it 1000 times at the end.
-        self::$instance = null;
 
         $error = error_get_last();
 

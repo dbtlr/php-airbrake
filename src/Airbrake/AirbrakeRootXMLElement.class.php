@@ -73,12 +73,10 @@ class AirbrakeRootXMLElement extends SimpleXMLElement
          * element should have a @key attribute for the name of the variable, and element
          * text content for the value of the variable."
          */
-        foreach ($node->attributes() as $name => $value) {
-            if ($name === self::KEY_STRING) {
-                return (string) $value;
-            }
+        if ($node[self::KEY_STRING]) {
+            return (string) $node[self::KEY_STRING];
         }
-        // we haven't found the 'key' attribute
+        // no 'key' attribute
         throw new \Exception('Malformed XML: \'var\' node with no \'key\' attribute');
     }
 

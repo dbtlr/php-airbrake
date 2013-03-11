@@ -31,8 +31,15 @@ class Notice extends Record
      */
     protected $_errorMessage = null;
 
+    /**
+     * The ID of the record saved in the local DB (if applicable)
+     */
+    protected $_dbId = null;
+
     // the max length for a string listing all the arguments of a function
-    const MAX_ALL_ARGS_STRING_LENGTH   = 1000;
+    const MAX_ALL_ARGS_STRING_LENGTH   = 5000;
+    // the max length for a string representing an array argument of a function
+    const MAX_ARRAY_ARG_STRING_LENGTH  = 1000;
     // the max length for a string representing a single argument of a function
     const MAX_SINGLE_ARG_STRING_LENGTH = 200;
 
@@ -65,7 +72,10 @@ class Notice extends Record
             $errorPrefix = $configuration->get('errorPrefix').' - ';
         }
         $message = ($errorPrefix ?: '').$this->errorMessage;
-        $error->addChild('message', $this->sanitize($message));
+        $error->addChild('message', self::sanitize($message));
+
+        // do we need to compute backtrace arguments?
+        $computeArgs = $configuration->sendArgumentsToAirbrake || (bool) $configuration->arrayReportDatabaseClass;
 
         if (count($this->backtrace) > 0) {
             $backtrace = $error->addChild('backtrace');
@@ -73,7 +83,7 @@ class Notice extends Record
                 $line = $backtrace->addChild('line');
                 $line->addAttribute('file', isset($entry['file']) ? $entry['file'] : '');
                 $line->addAttribute('number', isset($entry['line']) ? $entry['line'] : '');
-                $method = $this->getMethodString($entry);
+                $method = self::getMethodString($entry, $configuration, $computeArgs);
                 if ($method !== null) {
                     $line->addAttribute('method', $method);
                 }
@@ -93,11 +103,16 @@ class Notice extends Record
                                       'time'             => date('c'),
                                       'timestamp'        => time())
                                 );
-        $this->array2Node($request, 'params', $this->sanitize($configuration->getParameters()));
-        $this->array2Node($request, 'session', $this->sanitize($configuration->get('sessionData')));
-        $this->array2Node($request, 'cgi-data', $this->sanitize($cgi_data));
+        $this->array2Node($request, 'params', self::sanitize($configuration->getParameters()));
+        $this->array2Node($request, 'session', self::sanitize($configuration->get('sessionData')));
+        $this->array2Node($request, 'cgi-data', self::sanitize($cgi_data));
 
-        $this->callProcessAsArrayCallback($doc, $configuration);
+        $this->saveInLocalDB($doc, $configuration);
+
+        if ($computeArgs && !$configuration->sendArgumentsToAirbrake) {
+            // we need to remove the arguments from the backtrace before sending them to Airbrake
+            self::pruneArgs($doc);
+        }
 
         return $doc->asXML();
     }
@@ -120,36 +135,42 @@ class Notice extends Record
             if (is_array($value) || is_object($value)) {
                 $value = json_encode((array) $value);
             }
-            
-            // htmlspecialchars() is needed to prevent html characters from breaking the node.
-            $node->addChild('var', htmlspecialchars($value))
-                 ->addAttribute('key', $key);
+            self::addVarToNode($node, $key, $value);
         }
+    }
+
+    private static function addVarToNode(SimpleXMLElement &$node, $key, $value)
+    {
+        $node->addChild('var', self::sanitizeString($value))
+             ->addAttribute('key', $key);
     }
 
     // cleans the inputs from chars not supported by SimpleXMLElements
     // (as of today, mainly vertical tabs \v)
-    private function sanitizeString($s)
+    private static function sanitizeString($s)
     {
         $s = preg_replace('/\v/', ' ', $s);
+        // we want to strip low ASCII as this is not supported by PHP's XML libs
+        $s = filter_var($s, FILTER_SANITIZE_STRING, array('flags' => FILTER_FLAG_STRIP_LOW));
         return htmlspecialchars($s);
     }
 
     // recursively sanitizes arrays
-    private function sanitize($a)
+    private static function sanitize($a)
     {
         if (is_string($a)) {
-            return $this->sanitizeString($a);
+            return self::sanitizeString($a);
         } elseif(is_array($a)) {
             foreach ($a as $key => $value) {
-                $a[$key] = $this->sanitize($value);
+                $a[$key] = self::sanitize($value);
             }
         }
         return $a;
     }
 
     // generates the "method" string to be included in AB's record, from a backtrace entry
-    private function getMethodString(array $entry)
+    // set $computeArgs to false to not compute them
+    private static function getMethodString(array $entry, Configuration $configuration, $computeArgs = true)
     {
         if (!isset($entry['function'])) {
             return null;
@@ -162,18 +183,21 @@ class Notice extends Record
             $result = $entry['class'].$entry['type'].$result;
         }
 
-        // append arguments
-        if (isset($entry['args'])) {
-            $args = array_map(array($this, 'argToString'), $entry['args']);
-        } else {
+        // append arguments, if necessary
+        if ($computeArgs) {
             $args = array();
+            if (isset($entry['args'])) {
+                foreach ($entry['args'] as $arg) {
+                    $args[] = self::argToString($arg, $configuration);
+                }
+            }
+            $argsAsString = implode(', ', $args);
+            if (strlen($argsAsString) > self::MAX_ALL_ARGS_STRING_LENGTH) {
+                $argsAsString = substr($argsAsString, 0, self::MAX_ALL_ARGS_STRING_LENGTH);
+                $argsAsString .= ' ... [ARGS LIST TRUNCATED]';
+            }
+            $result .= '('.$argsAsString.')';
         }
-        $argsAsString = implode(', ', $args);
-        if (strlen($argsAsString) > self::MAX_ALL_ARGS_STRING_LENGTH) {
-            $argsAsString = substr($argsAsString, 0, self::MAX_ALL_ARGS_STRING_LENGTH);
-            $argsAsString .= ' ... [ARGS LIST TRUNCATED]';
-        }
-        $result .= '('.$argsAsString.')';
 
         return $result;
     }
@@ -182,33 +206,37 @@ class Notice extends Record
     // resources by their type
     // and all others are var_export'ed
     const MAX_LEVEL = 10; // the maximum level up to which arrays will be exported (inclusive)
-    private function argToString($arg, $level = 1)
+    private static function argToString($arg, Configuration $configuration, $level = 1)
     {
         if ($arg === null) {
             return 'NULL';
         }
+
+        $maxLength = self::MAX_SINGLE_ARG_STRING_LENGTH;
         if (is_array($arg) || $arg instanceof Traversable) {
-            $result = $this->singleArgToString($arg)." (\n";
+            $result = self::singleArgToString($arg, $configuration)." (\n";
             if ($level > self::MAX_LEVEL) {
                 $result .= "... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...\n";
             } else {
-                $prefix = $this->buildArrayPrefix($level);
+                $prefix = self::buildArrayPrefix($level);
                 foreach ($arg as $key => $value) {
-                    $result .= $prefix.var_export($key, true).' => '.$this->argToString($value, $level + 1).",\n";
+                    $result .= $prefix.var_export($key, true).' => '.self::argToString($value, $configuration, $level + 1).",\n";
                 }
             }
             $result .= ')';
+            $maxLength = self::MAX_ARRAY_ARG_STRING_LENGTH;
         } else {
-            $result = $this->singleArgToString($arg);
+            $result = self::singleArgToString($arg, $configuration);
         }
-        if (strlen($result) > self::MAX_SINGLE_ARG_STRING_LENGTH) {
+
+        if (strlen($result) > $maxLength) {
             $result = substr($result, 0, self::MAX_SINGLE_ARG_STRING_LENGTH);
             $result .= ' ... [ARG TRUNCATED]';
         }
         return $result;
     }
 
-    private function singleArgToString($arg)
+    private static function singleArgToString($arg, Configuration $configuration)
     {
         if (is_object($arg)) {
             return 'Object '.get_class($arg);
@@ -216,32 +244,68 @@ class Notice extends Record
             return 'Resource '.get_resource_type($arg);
         } elseif (is_array($arg)) {
             return 'array';
+        // should be a scalar then, let's see if it's blacklisted
+        } elseif($configuration->isScalarBlackListed($arg)) {
+            return '[BLACKLISTED SCALAR]';
         } else {
-            // should be a scalar then
+            // a scalar, not blacklisted!
             return gettype($arg).' '.var_export($arg, true);
         }
     }
 
     // # of spaces in the base array prefix
     const BASE_ARRAY_PREFIX_LENGTH = 2;
-    private function buildArrayPrefix($level)
+    private static function buildArrayPrefix($level)
     {
         return str_repeat(' ', $level * self::BASE_ARRAY_PREFIX_LENGTH);
     }
 
-    private function callProcessAsArrayCallback(AirbrakeRootXMLElement $doc, Configuration $configuration)
+    private function saveInLocalDB(AirbrakeRootXMLElement &$doc, Configuration $configuration)
     {
         try {
-            $callback = $configuration->get('processReportAsArrayCallback');
-            if ($callback) {
-                if (is_callable($callback)) {
-                    call_user_func($callback, $doc->asArray());
-                } else {
-                    throw new \Exception('Invalid processReportAsArrayCallback provided: '.var_export($callback, true));
+            if ($arrayReportDatabaseClass = $configuration->get('arrayReportDatabaseClass')) {
+                if (!($dbObject = $arrayReportDatabaseClass::logInDB($doc->asArray()))) {
+                    throw new \Exception('Error while logging Airbrake report into DB');
                 }
+                // we need to add the DB ID to the report
+                if (!($dbId = $dbObject->getId()) || !($dbStringId = $dbObject->getStringId())) {
+                    throw new \Exception('Couldn\'t retrieve ID for DB object '.var_export($dbObject, true));
+                }
+                $this->set('dbId', $dbId);
+                $requestNode = self::findOrAddChild($doc, 'request');
+                $cgiDataNode = self::findOrAddChild($requestNode, 'cgi-data');
+                self::addVarToNode($cgiDataNode, 'dbId', $dbStringId);
             }
         } catch (\Exception $ex) {
             $configuration->notifyUpperLayer($ex);
         }
     }
+
+    // tries to find $node's child with given $name, adds it if it doesn't exist
+    private static function findOrAddChild(SimpleXMLElement &$node, $name)
+    {
+        if ($node->$name) {
+            return $node->$name;
+        }
+        return $node->addChild($name);
+    }
+
+    // deletes arguments from the backtrace
+    // useful when we want to save them to a local DB but not send them to Airbrake
+    // admittedly not the prettiest piece of code out there, but does the job in a cheap way
+    private static function pruneArgs(SimpleXMLElement &$doc)
+    {
+        $backtraceNode = $doc->error->backtrace;
+        if (!$backtraceNode || !$backtraceNode->line) {
+            return;
+        }
+
+        for ($i = 0; $i < $backtraceNode->line->count(); $i++) {
+            $method = $backtraceNode->line[$i]['method'];
+            if ($method && ($pos = strpos($method, '(')) !== false) {
+                $doc->error->backtrace->line[$i]['method'] = substr($method, 0, $pos);
+            }
+        }
+    }
+
 }

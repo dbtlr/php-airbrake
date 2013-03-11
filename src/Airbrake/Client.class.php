@@ -8,6 +8,7 @@ require_once realpath(__DIR__.'/Version.class.php');
 require_once realpath(__DIR__.'/AirbrakeException.class.php');
 require_once realpath(__DIR__.'/Notice.class.php');
 require_once realpath(__DIR__.'/IDelayedNotification.php');
+require_once realpath(__DIR__.'/IArrayReportDatabaseObject.php');
 require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
@@ -139,8 +140,10 @@ class Client
                         $config->delayedTimeout,
                         Connection::getDefaultHeaders(),
                         $notice->errorMessage,
-                        $config->get('errorNotificationCallback'),
-                        $config->get('secondaryNotificationCallback')))
+                        $config->arrayReportDatabaseClass,
+                        $notice->dbId,
+                        $config->errorNotificationCallback,
+                        $config->secondaryNotificationCallback))
                 {
                     throw new \Exception('Couldn\'t create delayed task');
                 }
