@@ -58,7 +58,7 @@ class Configuration extends Record
                                                           // included into the backtraces' arguments
 
 
-    /* Interval vars, not too be set by the user */
+    /* Interval vars, not to be set by the user */
     protected $__blacklistedScalarArgsCache    = null;
     protected $__blacklistedRegexArgsCache     = null;
     protected $__blacklistCacheComputed        = false;
@@ -200,7 +200,6 @@ class Configuration extends Record
         } catch (\Exception $e) {
             // notify the upper layer, but keep reporting the current error anyway
             $this->notifyUpperLayer($e);
-            \w4lLog::debug('on return un array??');
             return array();
         }
     }

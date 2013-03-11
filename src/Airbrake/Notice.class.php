@@ -150,6 +150,8 @@ class Notice extends Record
     private static function sanitizeString($s)
     {
         $s = preg_replace('/\v/', ' ', $s);
+        // we want to strip low ASCII as this is not supported by PHP's XML libs
+        $s = filter_var($s, FILTER_SANITIZE_STRING, array('flags' => FILTER_FLAG_STRIP_LOW));
         return htmlspecialchars($s);
     }
 
