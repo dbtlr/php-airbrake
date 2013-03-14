@@ -142,7 +142,7 @@ class EventHandler
             restore_exception_handler();
         }
 
-        self::$instance = null;
+        self::$instance->shutdownCalled = true;
     }
 
     /**
