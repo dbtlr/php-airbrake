@@ -128,14 +128,15 @@ class Connection
 
     private static function updateDbRecord($dbReportClass, $dbId, $answer)
     {
-        $xmlResponse = new \SimpleXMLElement($answer);
+        $xmlResponse = @new \SimpleXMLElement($answer);
         if ($url = $xmlResponse->url) {
             if (!$dbReportClass::updateLinkById($dbId, $url)) {
                 throw new \Exception('Error when updating report with DB ID'.$dbId);
             }
-        } else {
-            throw new \Exception('Malformed answer');
         }
+        // else {
+            // throw new \Exception('Malformed answer');
+        // }
     }
 
     // returns true iff the resulting error message says we posted over the plan limit
