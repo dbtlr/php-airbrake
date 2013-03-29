@@ -128,15 +128,17 @@ class Connection
 
     private static function updateDbRecord($dbReportClass, $dbId, $answer)
     {
+        // FIXME: while we haven't migrated to sentry yet... just ignore that part.
+        return;
         $xmlResponse = @new \SimpleXMLElement($answer);
         if ($url = $xmlResponse->url) {
             if (!$dbReportClass::updateLinkById($dbId, $url)) {
                 throw new \Exception('Error when updating report with DB ID'.$dbId);
             }
         }
-        // else {
-            // throw new \Exception('Malformed answer');
-        // }
+        else {
+            throw new \Exception('Malformed answer');
+        }
     }
 
     // returns true iff the resulting error message says we posted over the plan limit
