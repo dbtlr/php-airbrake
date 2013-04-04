@@ -86,10 +86,10 @@ class Notice extends Record
         if ($arrayReportDatabaseClass = $configuration->arrayReportDatabaseClass) {
             // then we should be able to get the ID from the DB!
             try {
-                if (!($eventId = $arrayReportDatabaseClass::logInDB($result, $timestamp))) {
+                if (!($dbId = $arrayReportDatabaseClass::logInDB($result, $timestamp))) {
                     throw new \Exception('Error while logging Airbrake report into DB');
                 }
-                $eventId = self::formatUuid($eventId);
+                $eventId = self::formatUuid($dbId);
             } catch (\Exception $ex) {
                 $eventId = null;
                 $configuration->notifyUpperLayer($ex);
@@ -101,6 +101,9 @@ class Notice extends Record
         $result['event_id'] = $eventId;
         // we also add it to the actual report to be able to cross-reference to the DB
         $result['extra']['event_id'] = $eventId;
+        if (!empty($dbId)) {
+            $result['extra']['db_id'] = $dbId;
+        }
 
         if ($computeArgs && !$configuration->sendArgumentsToAirbrake) {
             // we need to remove the arguments from the backtrace before sending them to Airbrake
