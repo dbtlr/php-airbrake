@@ -21,7 +21,7 @@ class Notice extends Record
      */
     protected $_errorMessage = null;
 
-    /** 
+    /**
      * The event level
      */
     protected $_level = null;
@@ -57,7 +57,7 @@ class Notice extends Record
                 $result[$key] = $data;
             }
         }
-        
+
         // now to the backtrace - do we need to compute backtrace arguments?
         $computeArgs = $configuration->sendArgumentsToAirbrake || (bool) $configuration->arrayReportDatabaseClass;
         if ($this->backtrace) {

@@ -44,7 +44,7 @@ class Configuration extends Record
     protected $_trustConfig              = false; // if set to true, the config won't be checked (makes things a little more efficient in prod environments)
     protected $_arrayReportDatabaseClass = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
     protected $_delayedNotificationClass = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
-    
+
     // notify the upper layer if something goes wrong while reporting an event
     protected $_errorNotificationCallback      = null;    // a simple callback that takes a single AirbrakeException as a argument
                                                           // used to notify the upper layer
