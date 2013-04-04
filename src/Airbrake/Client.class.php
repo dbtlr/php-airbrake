@@ -6,10 +6,10 @@ require_once realpath(__DIR__.'/Configuration.class.php');
 require_once realpath(__DIR__.'/Connection.class.php');
 require_once realpath(__DIR__.'/Version.class.php');
 require_once realpath(__DIR__.'/AirbrakeException.class.php');
+require_once realpath(__DIR__.'/AirbrakeCallback.class.php');
 require_once realpath(__DIR__.'/Notice.class.php');
 require_once realpath(__DIR__.'/IDelayedNotification.php');
 require_once realpath(__DIR__.'/IArrayReportDatabaseObject.php');
-require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 
 /**
  * Airbrake client class.
@@ -46,7 +46,7 @@ class Client
      * @param array $backtrace
      * @return string
      */
-    public function notifyOnError($message, $file, $line, array $backtrace = null)
+    public function notifyOnError($message, $level, $file, $line, array $backtrace = null)
     {
         // add the actual file/line # of the error as the first item of the backtrace
         $backtraceFirstLine = array(
@@ -65,9 +65,9 @@ class Client
 
         $notice = new Notice;
         $notice->load(array(
-            'errorClass'   => 'PHP Error',
             'backtrace'    => array_merge($backtraceFirstLine, $backtrace),
             'errorMessage' => $message,
+            'level'        => $level
         ));
 
         return $this->notify($notice);
@@ -104,9 +104,9 @@ class Client
             $classException = get_class($exception);
         }
         $notice->load(array(
-            'errorClass'   => $classException,
             'backtrace'    => $backtrace,
             'errorMessage' => $prefix.' '.$classException.' : '.$exception->getMessage(),
+            'level'        => 'error',
         ));
 
         return $this->notify($notice);
@@ -125,23 +125,16 @@ class Client
     private function notify(Notice $notice)
     {
         $config = $this->configuration;
-        // use Resque, if available
-        if (class_exists('Resque') && $config->queue) {
-            $data = array('notice' => serialize($notice), 'configuration' => serialize($config));
-            \Resque::enqueue($config->queue, 'Airbrake\\Resque\\NotifyJob', $data);
-            return;
-        }
-        // or if another class to notify later has been provided, try to use that
-        elseif ($delayedNotifClass = $config->get('delayedNotificationClass')) {
+        // if another class to notify later has been provided, try to use that
+        if ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
                 if (!$delayedNotifClass::createDelayedNotification(array('Airbrake\Connection', 'notify'),
-                        $notice->toXml($config),
+                        $notice->buildJSON($config),
                         $config->apiEndPoint,
                         $config->delayedTimeout,
-                        Connection::getDefaultHeaders(),
+                        Connection::getDefaultHeaders($config),
                         $notice->errorMessage,
                         $config->arrayReportDatabaseClass,
-                        $notice->dbId,
                         $config->errorNotificationCallback,
                         $config->secondaryNotificationCallback))
                 {

@@ -2,7 +2,7 @@
 namespace Airbrake;
 
 /**
- * Airbrake notice class.
+ * Airbrake Version constants.
  *
  * @package        Airbrake
  * @author         Drew Butler <drew@abstracting.me>
@@ -11,8 +11,8 @@ namespace Airbrake;
  */
 class Version
 {
-    const NAME    = 'nodrew-php-airbrake';
-    const NUMBER  = '1.0';
-    const APP_URL = 'https://github.com/nodrew/php-airbrake';
-    const API     = '2.2'; // see http://help.airbrake.io/kb/api-2/notifier-api-version-22
+    const NAME    = 'w4l-php-airbrake';
+    const NUMBER  = '0.1';
+    const APP_URL = 'https://github.com/Work4Labs/php-airbrake';
+    const API     = '2.0';
 }

@@ -39,21 +39,25 @@ class EventHandler
     // around 20M should be enough
     private static $memoryAllowedOnShutdown = '40M';
 
-    protected $errorNames = array ( \E_NOTICE            => 'Notice',
-                                    \E_STRICT            => 'Strict',
-                                    \E_USER_WARNING      => 'User Warning',
-                                    \E_USER_NOTICE       => 'User Notice',
-                                    \E_DEPRECATED        => 'Deprecated',
-                                    \E_USER_DEPRECATED   => 'User Deprecated',
-                                    \E_CORE_WARNING      => 'Core Warning',
-                                    \E_ERROR             => 'Error',
-                                    \E_PARSE             => 'Parse',
-                                    \E_COMPILE_WARNING   => 'Compile Warning',
-                                    \E_COMPILE_ERROR     => 'Compile Error',
-                                    \E_CORE_ERROR        => 'Core Error',
-                                    \E_WARNING           => 'Warning',
-                                    \E_USER_ERROR        => 'User Error',
-                                    \E_RECOVERABLE_ERROR => 'Recoverable Error' );
+    const NAME  = 'name';
+    const LEVEL = 'level';
+    private static $errorNamesAndLevels = array (
+        \E_NOTICE            => array(self::NAME => 'Notice',            self::LEVEL => 'warning'),
+        \E_STRICT            => array(self::NAME => 'Strict',            self::LEVEL => 'warning'),
+        \E_USER_WARNING      => array(self::NAME => 'User Warning',      self::LEVEL => 'warning'),
+        \E_USER_NOTICE       => array(self::NAME => 'User Notice',       self::LEVEL => 'warning'),
+        \E_DEPRECATED        => array(self::NAME => 'Deprecated',        self::LEVEL => 'warning'),
+        \E_USER_DEPRECATED   => array(self::NAME => 'User Deprecated',   self::LEVEL => 'warning'),
+        \E_CORE_WARNING      => array(self::NAME => 'Core Warning',      self::LEVEL => 'warning'),
+        \E_ERROR             => array(self::NAME => 'Error',             self::LEVEL => 'error'),
+        \E_PARSE             => array(self::NAME => 'Parse',             self::LEVEL => 'error'),
+        \E_COMPILE_WARNING   => array(self::NAME => 'Compile Warning',   self::LEVEL => 'error'),
+        \E_COMPILE_ERROR     => array(self::NAME => 'Compile Error',     self::LEVEL => 'error'),
+        \E_CORE_ERROR        => array(self::NAME => 'Core Error',        self::LEVEL => 'error'),
+        \E_WARNING           => array(self::NAME => 'Warning',           self::LEVEL => 'warning'),
+        \E_USER_ERROR        => array(self::NAME => 'User Error',        self::LEVEL => 'fatal'),
+        \E_RECOVERABLE_ERROR => array(self::NAME => 'Recoverable Error', self::LEVEL => 'fatal')
+);
 
     // pointers to previous handler
     private static $previousExceptionHandler = null;
@@ -189,9 +193,10 @@ class EventHandler
         $backtrace = debug_backtrace();
         array_shift($backtrace);
 
-        $message = sprintf('A PHP error occurred (%s). %s', $this->errorNames[$type], $message);
+        $errorMeta = self::$errorNamesAndLevels[$type];
+        $message = sprintf('A PHP error occurred (%s). %s', $errorMeta[self::NAME], $message);
 
-        $this->airbrakeClient->notifyOnError($message, $file, $line, $backtrace);
+        $this->airbrakeClient->notifyOnError($message, $errorMeta[self::LEVEL], $file, $line, $backtrace);
 
         $this->decrementStackTraceDepth();
 
@@ -273,7 +278,7 @@ class EventHandler
         $message = sprintf('Unexpected shutdown. Error: %s  File: %s  Line: %d',
                             $error['message'], $error['file'], $error['line']);
 
-        $this->airbrakeClient->notifyOnError($message, $error['file'], $error['line']);
+        $this->airbrakeClient->notifyOnError($message, 'fatal', $error['file'], $error['line']);
     }
 
     public static function getClient()
@@ -353,5 +358,4 @@ class EventHandler
             return $n;
         }, (string) $s);
     }
-
 }

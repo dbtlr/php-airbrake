@@ -17,52 +17,42 @@ use Airbrake\AirbrakeException as AirbrakeException;
  */
 class Configuration extends Record
 {
+    // meta-data to communicate with Sentry
     protected $_apiKey;
-    protected $_timeout = 2;
-    protected $_delayedTimeout = 30;
-    protected $_environmentName = 'prod';
-    protected $_serverData;
-    protected $_getData;
-    protected $_postData;
-    protected $_sessionData;
-    protected $_component;
-    protected $_action;
-    protected $_projectRoot;
-    protected $_url;
-    protected $_hostname;
-    protected $_queue;
-    # old endpoint: http://api.airbrake.io/notifier_api/v2/notices
-    # see: http://help.airbrake.io/kb/accounts-2/introducing-airbrake-v2
-    protected $_apiEndPoint                    = 'http://collect.airbrake.io/notifier_api/v2/notices';
-    protected $_validateXML                    = false;   // set to true to validate the generated XML against a XSD file (see the XML validation class)
-    protected $_errorPrefix                    = null;    // appended to all reports' titles
+    protected $_apiEndPoint = 'https://app.getsentry.com/api/store/';
+    protected $_platform    = 'php';
+
+    // what to report, and what to add in the reports
     protected $_handleSeamlessly               = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
-    protected $_errorReporting                 = E_ALL;   // report only E_WARNING, E_PARSE and E_ERROR (cf http://php.net/manual/en/errorfunc.constants.php)
+    protected $_errorReporting                 = E_ALL;   // (cf http://php.net/manual/en/errorfunc.constants.php)
     protected $_silentExceptionClasses         = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
-    protected $_additionalCgiParams            = array(); // any additional CGI params to pass to Airbrake
-    protected $_additionalCgiParamsCallbacks   = array(); // callbacks to be called when constructing the notice
-                                                          // each entry must be an array with 2 keys : 'callback' defining a callback function,
-                                                          // and 'arguments' defining an array of arguments to be passed to the callback
-                                                          // and finally, each callback must return an array (of params to be included in the notice)
-    protected $_additionalReqParamsCallbacks   = array(); // same as 'additionalCgiParamsCallbacks', but for request params instead
-    protected $_errorNotificationCallback      = null;    // a callback that takes an AirbrakeException as a argument
-                                                          // used to notify the upper layer
-    protected $_delayedNotificationClass       = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
-    protected $_secondaryNotificationCallback  = null;    // a callback that takes an AirbrakeException as a argument
-                                                          // used to notify the upper layer of secondary errors (like "over the limit" errors when notofying to Airbrake)
-    protected $_arrayReportDatabaseClass       = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
+    protected $_tagsCallback                   = null;    // an AirbrakeCallback to build the tags to include in every report - must return an array
+    protected $_extraCallback                  = null;    // exact same as 'tagsCallback', except it's for extras
+    protected $_interfacesCallback             = null;    // yet another AirbrakeCallback, for Sentry interfaces (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
+                                                          // must return an array mapping interfaces' names with their content
     protected $_sendArgumentsToAirbrake        = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
                                                           // sensitive data in your Airbrake reports)
-    protected $_blacklistedScalarArgsCallback  = null;    // a callback that returns an array of scalars that won't ever be reported in the backtraces' arguments
-    protected $_blacklistedRegexArgsCallback   = null;    // a callback that returns an array of regular expressions that will prevent any scalar matching them from being
+    protected $_blacklistedScalarArgsCallback  = null;    // an AirbrakeCallback that returns an array of scalars that won't ever be reported in the backtraces' arguments
+    protected $_blacklistedRegexArgsCallback   = null;    // an AirbrakeCallback that returns an array of regular expressions that will prevent any scalar matching them from being
                                                           // included into the backtraces' arguments
 
+    // timeouts
+    protected $_timeout        = 2;  // timeout when reporting in real time
+    protected $_delayedTimeout = 30; // timeout when reporting offline
 
-    /* Interval vars, not to be set by the user */
-    protected $__blacklistedScalarArgsCache    = null;
-    protected $__blacklistedRegexArgsCache     = null;
-    protected $__blacklistCacheComputed        = false;
+    // misc
+    protected $_trustConfig              = false; // if set to true, the config won't be checked (makes things a little more efficient in prod environments)
+    protected $_arrayReportDatabaseClass = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
+    protected $_delayedNotificationClass = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
 
+    // notify the upper layer if something goes wrong while reporting an event
+    protected $_errorNotificationCallback      = null;    // a simple callback that takes a single AirbrakeException as a argument
+                                                          // used to notify the upper layer
+    protected $_secondaryNotificationCallback  = null;    // exact same as 'errorNotificationCallback'
+                                                          // used to notify the upper layer of secondary errors (like "over the limit" errors when notifying to Airbrake)
+
+
+    private static $instance = null;
 
     /**
      * Load the given data array to the record.
@@ -74,49 +64,7 @@ class Configuration extends Record
     {
         $data['apiKey'] = $apiKey;
         parent::__construct($data);
-    }
-
-    /**
-     * Initialize the data source.
-     * put any additional CGI params you'd like to be included in the Airbrake record in the 'additionalCgiParams' key
-     */
-    protected function initialize()
-    {
-        if (!$this->serverData) {
-            $this->serverData = (array) $_SERVER;
-        }
-        if (!$this->getData) {
-            $this->getData = (array) $_GET;
-        }
-        if (!$this->postData) {
-            $this->postData = (array) $_POST;
-        }
-
-        if (!$this->sessionData && isset($_SESSION)) {
-            $this->sessionData = (array) $_SESSION;
-        }
-
-        if (!$this->projectRoot) {
-            $this->projectRoot = isset($this->serverData['_']) ? $this->serverData['_'] : $this->serverData['DOCUMENT_ROOT'];
-        }
-
-        if (!$this->url) {
-            $this->url = isset($this->serverData['REDIRECT_URL']) ? $this->serverData['REDIRECT_URL'] : $this->serverData['SCRIPT_NAME'];
-        }
-
-        if (!$this->hostname) {
-            $this->hostname = isset($this->serverData['HTTP_HOST']) ? $this->serverData['HTTP_HOST'] : 'No Host';
-        }
-    }
-
-    /**
-     * Get the combined server parameters.
-     *
-     * @return array
-     */
-    public function getParameters()
-    {
-        return array_merge($this->get('postData'), $this->get('getData'));
+        self::$instance = $this;
     }
 
     /**
@@ -124,83 +72,40 @@ class Configuration extends Record
      */
     public function verify()
     {
-        if (!$this->apiKey) {
-            throw new AirbrakeException(
-                'Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
+        if (!$this->trustConfig) {
+            if (!$this->apiKey) {
+                throw new AirbrakeException('Cannot initialize the Airbrake client without an ApiKey being set in the configuration.');
+            }
+            $this->checkOptionClassImplements('delayedNotificationClass', 'IDelayedNotification');
+            $this->checkOptionClassImplements('arrayReportDatabaseClass', 'IArrayReportDatabaseObject');
+            $this->checkAndSetAirbrakeCallback('tagsCallback', array(), 'array');
+            $this->checkAndSetAirbrakeCallback('extraCallback', array(), 'array');
+            $this->checkAndSetAirbrakeCallback('interfacesCallback', array(), 'array');
+            $this->checkAndSetAirbrakeCallback('blacklistedScalarArgsCallback', array(), 'array');
+            $this->checkAndSetAirbrakeCallback('blacklistedRegexArgsCallback', array(), 'array');
         }
-        $this->checkOptionClassImplements('delayedNotificationClass', 'IDelayedNotification');
-        $this->checkOptionClassImplements('arrayReportDatabaseClass', 'IArrayReportDatabaseObject');
     }
 
     // throws an exception if the given key is set to a class that doesn't implement the given interface
     private function checkOptionClassImplements($key, $interface)
     {
-        if (($class = $this->get($key))
+        if (($class = $this->$key)
             && !array_key_exists('Airbrake\\'.$interface, class_implements($class)))
         {
             throw new AirbrakeException("$key $class does not implement $interface");
         }
     }
 
-    public function addAdditionalCgiParam($key, $value)
+    // throws an exception if the given key is not set to a valid AirbrakeCallback, plus ensures the right default values and expected class & type
+    private function checkAndSetAirbrakeCallback($key, $defaultReturnValue, $shouldReturnType = null, $shouldReturnClass = null)
     {
-        $params = $this->getAdditionalCgiParams();
-        $params[$key] = $value;
-    }
-
-    public function getAdditionalCgiParams()
-    {
-        $result = $this->get('additionalCgiParams');
-        $result = array_merge($result, $this->aggregateCallbackResults($this->get('additionalCgiParamsCallbacks')));
-        return $result;
-    }
-
-    public function getAdditionalReqParams()
-    {
-        return $this->aggregateCallbackResults($this->get('additionalReqParamsCallbacks'));
-    }
-
-    private function aggregateCallbackResults(array $callbacks)
-    {
-        $result = array();
-        foreach ($callbacks as $params) {
-            $callbackResult = $this->callAdditionalCallback($params);
-            $result = array_merge($result, $callbackResult);
-        }
-        return $result;
-    }
-
-    private function callAdditionalCallback(array $callbackParams)
-    {
-        // check that the syntax is correct
-        if (!is_array($callbackParams)
-            || !array_key_exists('callback', $callbackParams)
-            || !array_key_exists('arguments', $callbackParams)
-            || !is_array($callbackParams['arguments'])
-            )
-        {
-            $this->notifyUpperLayer(new \Exception('Incorrect callback, check syntax:\n'.var_export($callbackParams, true)));
-        }
-        return $this->executeCallbackReturningArray($callbackParams['callback'], $callbackParams['arguments']);
-    }
-
-    // executes a callback that's expected to return an arrray
-    private function executeCallbackReturningArray($callback, array $arguments = array())
-    {
-        try {
-            if (!is_callable($callback, false, $callableName)) {
-                throw new \Exception(var_export($callback, true).' is not a valid callback!');
+        if ($object = $this->$key) {
+            if (!(is_object($object) && $object instanceof AirbrakeCallback)) {
+                throw new AirbrakeException("$key is not an instance of AirbrakeCallback!");
             }
-            // call it, and keep the result if it's an array
-            $callbackResult = call_user_func_array($callback, $arguments);
-            if (!is_array($callbackResult)) {
-                throw new \Exception('Callback must return an array! '.$callableName.' returned a type '.gettype($callbackResult).' :\n'.var_export($callbackResult, true));
-            }
-            return $callbackResult;
-        } catch (\Exception $e) {
-            // notify the upper layer, but keep reporting the current error anyway
-            $this->notifyUpperLayer($e);
-            return array();
+            $object->setDefaultReturnValue($defaultReturnValue);
+            $object->setExpectedType($shouldReturnType);
+            $object->setExpectedClass($shouldReturnClass);
         }
     }
 
@@ -230,36 +135,15 @@ class Configuration extends Record
         }
     }
 
-    private function buildBlacklistCache()
-    {
-        if ($this->get('_blacklistCacheComputed')) {
-            return;
-        }
-        $this->set('_blacklistCacheComputed', true);
-        // scalars
-        if ($scalarCallback = $this->get('blacklistedScalarArgsCallback')) {
-            $scalarCache = $this->executeCallbackReturningArray($scalarCallback);
-        } else {
-            $scalarCache = array();
-        }
-        $this->set('_blacklistedScalarArgsCache', $scalarCache);
-        // and regexes
-        if ($regexCallback = $this->get('blacklistedRegexArgsCallback')) {
-            $regexCache = $this->executeCallbackReturningArray($regexCallback);
-        } else {
-            $regexCache = array();
-        }
-        $this->set('_blacklistedRegexArgsCache', $regexCache);
-    }
-
     public function isScalarBlackListed($arg)
     {
         $arg = (string) $arg;
-        $this->buildBlacklistCache();
-        if (in_array($arg, $this->get('_blacklistedScalarArgsCache'))) {
+        $scalarBlackList = $this->blacklistedScalarArgsCallback ? $this->blacklistedScalarArgsCallback->call() : array();
+        if (in_array($arg, $scalarBlackList)) {
             return true;
         }
-        foreach ($this->get('_blacklistedRegexArgsCache') as $regex) {
+        $regexBlackList  = $this->blacklistedRegexArgsCallback ? $this->blacklistedRegexArgsCallback->call() : array();
+        foreach ($regexBlackList as $regex) {
             if (preg_match($regex, $arg)) {
                 return true;
             }
@@ -267,4 +151,8 @@ class Configuration extends Record
         return false;
     }
 
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
 }
