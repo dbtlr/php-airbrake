@@ -25,7 +25,7 @@ class Connection
     public function __construct(Configuration $configuration)
     {
         $this->configuration = $configuration;
-        $this->addHeader(self::getDefaultHeaders());
+        $this->addHeader(self::getDefaultHeaders($configuration));
     }
 
     /**
@@ -54,7 +54,7 @@ class Connection
     public function send(Notice $notice)
     {
         $config = $this->configuration;
-        $xml    = $notice->buildReport($config);
+        $xml    = $notice->buildJSON($config);
 
         $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers, $notice->errorMessage,
             $config->arrayReportDatabaseClass, $notice->dbId,
@@ -65,7 +65,7 @@ class Connection
         return $result;
     }
 
-    public static function notify(array $data, $apiEndPoint, $timeout, $headers, $errorMessage, $dbReportClass = null, $dbId = null, $errorNotificationCallback = null, $secondaryCallback = null)
+    public static function notify($data, $apiEndPoint, $timeout, $headers, $errorMessage, $dbReportClass = null, $dbId = null, $errorNotificationCallback = null, $secondaryCallback = null)
     {
         $curl = curl_init();
 

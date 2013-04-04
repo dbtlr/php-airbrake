@@ -6,6 +6,7 @@ require_once realpath(__DIR__.'/Configuration.class.php');
 require_once realpath(__DIR__.'/Connection.class.php');
 require_once realpath(__DIR__.'/Version.class.php');
 require_once realpath(__DIR__.'/AirbrakeException.class.php');
+require_once realpath(__DIR__.'/AirbrakeCallback.class.php');
 require_once realpath(__DIR__.'/Notice.class.php');
 require_once realpath(__DIR__.'/IDelayedNotification.php');
 require_once realpath(__DIR__.'/IArrayReportDatabaseObject.php');
@@ -128,10 +129,10 @@ class Client
         if ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
                 if (!$delayedNotifClass::createDelayedNotification(array('Airbrake\Connection', 'notify'),
-                        $notice->buildReport($config),
+                        $notice->buildJSON($config),
                         $config->apiEndPoint,
                         $config->delayedTimeout,
-                        Connection::getDefaultHeaders(),
+                        Connection::getDefaultHeaders($config),
                         $notice->errorMessage,
                         $config->arrayReportDatabaseClass,
                         $config->errorNotificationCallback,

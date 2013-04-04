@@ -12,5 +12,6 @@ interface IArrayReportDatabaseObject
 {
     // Should write the Sentry report (as an array) to the DB
     // Must return the object's id on success, in hex format with max 32 chars
-    public static function logInDB($reportArray);
+    // and null on failure
+    public static function logInDB($reportArray, $timestamp);
 }

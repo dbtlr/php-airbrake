@@ -27,7 +27,7 @@ class Configuration extends Record
     protected $_errorReporting                 = E_ALL;   // (cf http://php.net/manual/en/errorfunc.constants.php)
     protected $_silentExceptionClasses         = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
     protected $_tagsCallback                   = null;    // an AirbrakeCallback to build the tags to include in every report - must return an array
-    protected $_extrasCallback                 = null;    // exact same as 'tagsCallback', except it's for extras
+    protected $_extraCallback                  = null;    // exact same as 'tagsCallback', except it's for extras
     protected $_interfacesCallback             = null;    // yet another AirbrakeCallback, for Sentry interfaces (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
                                                           // must return an array mapping interfaces' names with their content
     protected $_sendArgumentsToAirbrake        = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
@@ -51,6 +51,9 @@ class Configuration extends Record
     protected $_secondaryNotificationCallback  = null;    // exact same as 'errorNotificationCallback'
                                                           // used to notify the upper layer of secondary errors (like "over the limit" errors when notifying to Airbrake)
 
+
+    private static $instance = null;
+
     /**
      * Load the given data array to the record.
      *
@@ -61,6 +64,7 @@ class Configuration extends Record
     {
         $data['apiKey'] = $apiKey;
         parent::__construct($data);
+        self::$instance = $this;
     }
 
     /**
@@ -75,7 +79,7 @@ class Configuration extends Record
             $this->checkOptionClassImplements('delayedNotificationClass', 'IDelayedNotification');
             $this->checkOptionClassImplements('arrayReportDatabaseClass', 'IArrayReportDatabaseObject');
             $this->checkAndSetAirbrakeCallback('tagsCallback', array(), 'array');
-            $this->checkAndSetAirbrakeCallback('extrasCallback', array(), 'array');
+            $this->checkAndSetAirbrakeCallback('extraCallback', array(), 'array');
             $this->checkAndSetAirbrakeCallback('interfacesCallback', array(), 'array');
             $this->checkAndSetAirbrakeCallback('blacklistedScalarArgsCallback', array(), 'array');
             $this->checkAndSetAirbrakeCallback('blacklistedRegexArgsCallback', array(), 'array');
@@ -95,12 +99,14 @@ class Configuration extends Record
     // throws an exception if the given key is not set to a valid AirbrakeCallback, plus ensures the right default values and expected class & type
     private function checkAndSetAirbrakeCallback($key, $defaultReturnValue, $shouldReturnType = null, $shouldReturnClass = null)
     {
-        if (!(($object = $this->$key) instanceof AirbrakeCallback)) {
-            throw new AirbrakeException("$key Object is not an instance of AirbrakeCallback!");
+        if ($object = $this->$key) {
+            if (!(is_object($object) && $object instanceof AirbrakeCallback)) {
+                throw new AirbrakeException("$key is not an instance of AirbrakeCallback!");
+            }
+            $object->setDefaultReturnValue($defaultReturnValue);
+            $object->setExpectedType($shouldReturnType);
+            $object->setExpectedClass($shouldReturnClass);
         }
-        $object->setDefaultReturnValue($defaultReturnValue);
-        $object->setExpectedType($shouldReturnType);
-        $object->setExpectedClass($shouldReturnClass);
     }
 
     public function notifyUpperLayer(\Exception $e, $rethrowIfNoCallback = false, $secondaryNotification = false)
@@ -143,5 +149,10 @@ class Configuration extends Record
             }
         }
         return false;
+    }
+
+    public static function getInstance()
+    {
+        return self::$instance;
     }
 }

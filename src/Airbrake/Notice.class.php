@@ -38,12 +38,14 @@ class Notice extends Record
      * @param Airbrake\Configuration $configuration
      * @return array
      */
-    public function buildReport(Configuration $configuration)
+    public function buildJSON(Configuration $configuration)
     {
+        $timestamp = time();
+
         // basic options
         $result = array(
             'message'    => $this->errorMessage,
-            'timestamp'  => date('c'),
+            'timestamp'  => date('c', $timestamp),
             'level'      => $this->level,
             'logger'     => Version::NAME,
             'platform'   => $configuration->platform,
@@ -60,8 +62,9 @@ class Notice extends Record
         $computeArgs = $configuration->sendArgumentsToAirbrake || (bool) $configuration->arrayReportDatabaseClass;
         if ($this->backtrace) {
             $frames = array();
-            foreach ($this->backtrace as $entry) {
-                if ($frame = self::getStacktraceFrame($entry, $configuration)) {
+            // we need to reverse the backtrace as Sentry expects the most recent event first
+            for ($i = count($this->backtrace) - 1; $i >= 0; $i--) {
+                if ($frame = self::getStacktraceFrame($this->backtrace[$i], $configuration, $computeArgs)) {
                     $frames[] = $frame;
                 }
             }
@@ -73,7 +76,9 @@ class Notice extends Record
         // and finally other interfaces!
         if (($interfacesCallback = $configuration->interfacesCallback) && ($interfaces = $interfacesCallback->call())) {
             foreach ($interfaces as $name => $data) {
-                $result['sentry.interfaces.'.$name] = $data;
+                if ($data) {
+                    $result['sentry.interfaces.'.$name] = $data;
+                }
             }
         }
 
@@ -81,7 +86,7 @@ class Notice extends Record
         if ($arrayReportDatabaseClass = $configuration->arrayReportDatabaseClass) {
             // then we should be able to get the ID from the DB!
             try {
-                if (!($eventId = $arrayReportDatabaseClass::logInDB($result))) {
+                if (!($eventId = $arrayReportDatabaseClass::logInDB($result, $timestamp))) {
                     throw new \Exception('Error while logging Airbrake report into DB');
                 }
                 $eventId = self::formatUuid($eventId);
@@ -93,14 +98,16 @@ class Notice extends Record
         if (empty($eventId)) {
             $eventId = self::getRandomUuid4();
         }
-        $result['eventId'] = $eventId;
+        $result['event_id'] = $eventId;
+        // we also add it to the actual report to be able to cross-reference to the DB
+        $result['extra']['event_id'] = $eventId;
 
         if ($computeArgs && !$configuration->sendArgumentsToAirbrake) {
             // we need to remove the arguments from the backtrace before sending them to Airbrake
-            self::pruneArgs($doc);
+            self::pruneArgs($result);
         }
 
-        return $result;
+        return json_encode($result);
     }
 
     // generates a stacktrace for this entry (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
@@ -158,14 +165,15 @@ class Notice extends Record
 
         $maxLength = self::MAX_SINGLE_ARG_STRING_LENGTH;
         if (is_array($arg) || $arg instanceof Traversable) {
-            $result = self::singleArgToString($arg, $configuration)." (\n";
+            $result = self::singleArgToString($arg, $configuration).' (';
             if ($level > self::MAX_LEVEL) {
-                $result .= "... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...\n";
+                $result .= '... TOO MANY LEVELS IN THE ARRAY, NOT DISPLAYED ...';
             } else {
-                $prefix = self::buildArrayPrefix($level);
+                $arrayString = '';
                 foreach ($arg as $key => $value) {
-                    $result .= $prefix.var_export($key, true).' => '.self::argToString($value, $configuration, $level + 1).",\n";
+                    $arrayString .= ($arrayString ? ', ' : '').var_export($key, true).' => '.self::argToString($value, $configuration, $level + 1);
                 }
+                $result .= $arrayString;
             }
             $result .= ')';
             $maxLength = self::MAX_ARRAY_ARG_STRING_LENGTH;
@@ -197,25 +205,18 @@ class Notice extends Record
         }
     }
 
-    // # of spaces in the base array prefix
-    const BASE_ARRAY_PREFIX_LENGTH = 2;
-    private static function buildArrayPrefix($level)
-    {
-        return str_repeat(' ', $level * self::BASE_ARRAY_PREFIX_LENGTH);
-    }
-
     // from http://sentry.readthedocs.org/en/latest/developer/client/ : the uuid is a 32-char long hex string
     const UUID_LENGTH = 32;
     // checks the uuid is not too long, is an hex string, and pads it if necessary with leading zeroes
     public static function formatUuid($uuid) {
         $uuid = (string) $uuid;
-        if (count($uuid) > self::UUID_LENGTH) {
+        if (strlen($uuid) > self::UUID_LENGTH) {
             throw new \Exception('UUID "'.$uuid.'" is too long! Can\'t be more than '.self::UUID_LENGTH.' characters long');
         }
         if (!preg_match('/^[a-fA-f0-9]*$/', $uuid)) {
             throw new \Exception('UUID must be an hexadecimal string! You gave '.$uuid);
         }
-        $padding = str_repeat('0', self::UUID_LENGTH - count($uuid));
+        $padding = str_repeat('0', self::UUID_LENGTH - strlen($uuid));
         return $padding.$uuid;
     }
 

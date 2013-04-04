@@ -18,15 +18,13 @@ class AirbrakeCallback
         $computed,
         $shouldReturnType,
         $shouldReturnClass,
-        $defaultReturnValue,
-        $config;
+        $defaultReturnValue;
 
-    public function __construct($callback, Configuration $config, array $prependedArguments = array(), $cachable = false)
+    public function __construct($callback, $cachable = false, array $prependedArguments = array())
     {
         $this->callback           = $callback;
         $this->prependedArguments = $prependedArguments;
         $this->cachable           = $cachable;
-        $this->config             = $config;
         $this->reset();
     }
 
@@ -57,7 +55,9 @@ class AirbrakeCallback
             }
         } catch (\Exception $e) {
             // notify the upper layer, but keep reporting the current error anyway
-            $this->config->notifyUpperLayer($e);
+            if ($config = Configuration::getInstance()) {
+                $config->notifyUpperLayer($e);
+            }
             $result = $this->defaultReturnValue;
         }
         if ($this->cachable) {
@@ -69,7 +69,7 @@ class AirbrakeCallback
 
     public function setDefaultReturnValue($value)
     {
-        $this->$defaultReturnValue = $value;
+        $this->defaultReturnValue = $value;
     }
 
     public function setExpectedType($type)
