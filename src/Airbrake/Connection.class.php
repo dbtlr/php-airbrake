@@ -65,7 +65,15 @@ class Connection
         return $result;
     }
 
-    public static function notify($data, $apiEndPoint, $timeout, $headers, $errorMessage, $dbReportClass = null, $dbId = null, $errorNotificationCallback = null, $secondaryCallback = null)
+    public static function notify(
+        $data,
+        $apiEndPoint,
+        $timeout,
+        $headers,
+        $errorMessage,
+        $dbReportClass = null,
+        $errorNotificationCallback = null,
+        $secondaryCallback = null)
     {
         $curl = curl_init();
 
@@ -85,17 +93,32 @@ class Connection
         $responseStatus = curl_getinfo($curl, CURLINFO_HTTP_CODE);
 
         if ($responseStatus != 200) {
-            $callback = $errorNotificationCallback && is_callable($errorNotificationCallback) ? $errorNotificationCallback :
-                ($secondaryCallback && is_callable($secondaryCallback) ? $secondaryCallback : null);
-            if ($callback) {
-                $exception = new AirbrakeException("HTTP response status: $responseStatus\n\nResponse: $answer\n\nOriginal data sent: $data");
-                $exception->setShortDescription('Aibrake critical error when posting a report');
-                call_user_func_array($errorNotificationCallback, array($exception));
+            if (self::isThrottlingErrorMessage($responseStatus, $answer)) {
+                if ($secondaryCallback && is_callable($secondaryCallback)) {
+                    // just log 'over the limit' errors to the secondary notifier, if any exists, otherwise ignore them
+                    $exception = new AirbrakeException("Over plan limit, didn't log error: $errorMessage");
+                    $exception->setShortDescription('Airbrake API throttling error');
+                    $exception->setLogNamespace('airbrake_api_throttling');
+                    call_user_func_array($secondaryCallback, array($exception));
+                }
+            } else {
+                $callback = ($errorNotificationCallback && is_callable($errorNotificationCallback)) ? $errorNotificationCallback :
+                    ($secondaryCallback && is_callable($secondaryCallback) ? $secondaryCallback : null);
+                if ($callback) {
+                    $exception = new AirbrakeException("HTTP response status: $responseStatus\n\nResponse: $answer\n\nOriginal data sent: $data");
+                    $exception->setShortDescription('Aibrake critical error when posting a report');
+                    call_user_func_array($callback, array($exception));
+                }
             }
         }
 
         curl_close($curl);
 
         return $answer;
+    }
+
+    private static function isThrottlingErrorMessage($responseStatus, $answer)
+    {
+        return $responseStatus == 403 && $answer == 'Creation of this event was blocked';
     }
 }
