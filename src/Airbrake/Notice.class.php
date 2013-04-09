@@ -194,7 +194,9 @@ class Notice extends Record
     private static function singleArgToString($arg, Configuration $configuration)
     {
         if (is_object($arg)) {
-            return 'Object '.get_class($arg);
+            $stringifierCallback = $configuration->objectStringifierCallback;
+            $appendedString = $stringifierCallback ? $stringifierCallback->call($arg) : '';
+            return 'Object '.get_class($arg).($appendedString ? ' : '.$appendedString : '');
         } elseif (is_resource($arg)) {
             return 'Resource '.get_resource_type($arg);
         } elseif (is_array($arg)) {

@@ -41,9 +41,11 @@ class Configuration extends Record
     protected $_delayedTimeout = 30; // timeout when reporting offline
 
     // misc
-    protected $_trustConfig              = false; // if set to true, the config won't be checked (makes things a little more efficient in prod environments)
-    protected $_arrayReportDatabaseClass = null;    // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
-    protected $_delayedNotificationClass = null;    // a class to create delayed notification; this class *must* implement IDelayedNotification
+    protected $_trustConfig               = false; // if set to true, the config won't be checked (makes things a little more efficient in prod environments)
+    protected $_arrayReportDatabaseClass  = null;  // a class to log Airbrake reports in a local DB; this class *must* implement IArrayReportDatabaseObject
+    protected $_delayedNotificationClass  = null;  // a class to create delayed notification; this class *must* implement IDelayedNotification
+    protected $_objectStringifierCallback = null;  // an AirbrakeCallback that can generate custom string representations for objects
+                                                   // to be included in the backtrace
 
     // notify the upper layer if something goes wrong while reporting an event
     protected $_errorNotificationCallback      = null;    // a simple callback that takes a single AirbrakeException as a argument
@@ -83,6 +85,7 @@ class Configuration extends Record
             $this->checkAndSetAirbrakeCallback('interfacesCallback', array(), 'array');
             $this->checkAndSetAirbrakeCallback('blacklistedScalarArgsCallback', array(), 'array');
             $this->checkAndSetAirbrakeCallback('blacklistedRegexArgsCallback', array(), 'array');
+            $this->checkAndSetAirbrakeCallback('objectStringifierCallback', '', 'string');
         }
     }
 

@@ -28,7 +28,7 @@ class AirbrakeCallback
         $this->reset();
     }
 
-    public function call(array $additionalArugments = array())
+    public function call(/* polymorphic */)
     {
         if ($this->cachable && $this->computed) {
             return $this->cachedResult;
@@ -38,7 +38,7 @@ class AirbrakeCallback
                 throw new \Exception(var_export($this->callback, true).' is not a valid callback!');
             }
             // call it, and keep the result if it's an array
-            $args   = array_merge($this->prependedArguments, $additionalArugments);
+            $args   = array_merge($this->prependedArguments, func_get_args());
             $result = call_user_func_array($this->callback, $args);
             // check type
             if ($this->shouldReturnType && gettype($result) != $this->shouldReturnType) {
