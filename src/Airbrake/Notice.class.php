@@ -52,7 +52,7 @@ class Notice extends Record
             'servername' => gethostname()
         );
         // tags and extras
-        foreach (array('tags', 'extras') as $key) {
+        foreach (array('tags', 'extra') as $key) {
             if (($callback = $configuration->get($key.'Callback')) && ($data = $callback->call())) {
                 $result[$key] = $data;
             }
