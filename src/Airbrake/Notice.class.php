@@ -26,6 +26,11 @@ class Notice extends Record
      */
     protected $_level = null;
 
+    /**
+     * The Sentry event ID
+     */
+    protected $_eventId = null;
+
     // the max length for a string representing an array argument of a function
     const MAX_ARRAY_ARG_STRING_LENGTH  = 1000;
     // the max length for a string representing a single argument of a function
@@ -101,6 +106,7 @@ class Notice extends Record
         $result['event_id'] = $eventId;
         // we also add it to the actual report to be able to cross-reference to the DB
         $result['extra']['event_id'] = $eventId;
+        $this->eventId = $eventId;
         if (!empty($dbId)) {
             $result['extra']['db_id'] = $dbId;
         }
