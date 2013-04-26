@@ -128,8 +128,10 @@ class Client
         // if another class to notify later has been provided, try to use that
         if ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
-                if (!$delayedNotifClass::createDelayedNotification(array('Airbrake\Connection', 'notify'),
-                        $notice->buildJSON($config),
+                $json = $notice->buildJSON($config);
+                if (!$delayedNotifClass::createDelayedNotification(
+                        $notice->eventId,
+                        $json,
                         $config->apiEndPoint,
                         $config->delayedTimeout,
                         Connection::getDefaultHeaders($config),
