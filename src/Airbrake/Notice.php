@@ -6,24 +6,24 @@ use SimpleXMLElement;
 /**
  * Airbrake notice class.
  *
- * @package     Airbrake
- * @author      Drew Butler <drew@abstracting.me>
- * @copyright   (c) 2011 Drew Butler
- * @license     http://www.opensource.org/licenses/mit-license.php
+ * @package    Airbrake
+ * @author     Drew Butler <drew@dbtlr.com>
+ * @copyright  (c) 2011-2013 Drew Butler
+ * @license    http://www.opensource.org/licenses/mit-license.php
  */
 class Notice extends Record
 {
-    /** 
+    /**
      * The backtrace from the given exception or hash.
      */
     protected $_backtrace = null;
 
-    /** 
+    /**
      * The name of the class of error (such as RuntimeError)
      */
     protected $_errorClass = null;
 
-    /** 
+    /**
      * The message from the exception, or a general description of the error
      */
     protected $_errorMessage = null;
@@ -100,7 +100,7 @@ class Notice extends Record
             if (is_array($value) || is_object($value)) {
                 $value = json_encode((array) $value);
             }
-            
+
             // htmlspecialchars() is needed to prevent html characters from breaking the node.
             $node->addChild('var', htmlspecialchars($value))
                  ->addAttribute('key', $key);

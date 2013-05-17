@@ -30,10 +30,10 @@ use ArrayAccess, IteratorAggregate, ArrayIterator;
  * to it that are not known to the record type will be ignored and any that do not exist
  * when getting, will simply return null.
  *
- * @package		Airbrake
- * @author		Drew Butler <drew@abstracting.me>
- * @copyright	(c) 2011 Drew Butler
- * @license		http://www.opensource.org/licenses/mit-license.php
+ * @package    Airbrake
+ * @author     Drew Butler <drew@dbtlr.com>
+ * @copyright  (c) 2011-2013 Drew Butler
+ * @license    http://www.opensource.org/licenses/mit-license.php
  */
 abstract class Record implements ArrayAccess, IteratorAggregate
 {
@@ -233,7 +233,7 @@ abstract class Record implements ArrayAccess, IteratorAggregate
     {
         return new ArrayIterator($this->dump());
     }
-    
+
     /**
      * Optional method to declare that will initialize the data on construct.
      */

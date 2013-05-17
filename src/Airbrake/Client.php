@@ -14,10 +14,10 @@ require_once realpath(__DIR__.'/Resque/NotifyJob.php');
 /**
  * Airbrake client class.
  *
- * @package		Airbrake
- * @author		Drew Butler <drew@abstracting.me>
- * @copyright	(c) 2011 Drew Butler
- * @license		http://www.opensource.org/licenses/mit-license.php
+ * @package    Airbrake
+ * @author     Drew Butler <drew@dbtlr.com>
+ * @copyright  (c) 2011-2013 Drew Butler
+ * @license    http://www.opensource.org/licenses/mit-license.php
  */
 class Client
 {
@@ -44,7 +44,7 @@ class Client
      *
      * @param string $message
      * @param array $backtrace
-	 * @return string
+     * @return string
      */
     public function notifyOnError($message, array $backtrace = null)
     {
@@ -69,7 +69,7 @@ class Client
      * Notify on an exception
      *
      * @param Airbrake\Notice $notice
-	 * @return string
+     * @return string
      */
     public function notifyOnException(Exception $exception)
     {
@@ -94,7 +94,6 @@ class Client
     public function notify(Notice $notice)
     {
         if (class_exists('Resque') && $this->configuration->queue) {
-            //print_r($notice);exit;
             $data = array('notice' => serialize($notice), 'configuration' => serialize($this->configuration));
             \Resque::enqueue($this->configuration->queue, 'Airbrake\\Resque\\NotifyJob', $data);
             return;

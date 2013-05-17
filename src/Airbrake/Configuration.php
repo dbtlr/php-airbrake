@@ -10,10 +10,10 @@ use Airbrake\Exception as AirbrakeException;
  *
  * Loads via the inherited Record class methods.
  *
- * @package		Airbrake
- * @author		Drew Butler <drew@abstracting.me>
- * @copyright	(c) 2011 Drew Butler
- * @license		http://www.opensource.org/licenses/mit-license.php
+ * @package    Airbrake
+ * @author     Drew Butler <drew@dbtlr.com>
+ * @copyright  (c) 2011-2013 Drew Butler
+ * @license    http://www.opensource.org/licenses/mit-license.php
  */
 class Configuration extends Record
 {
@@ -52,9 +52,11 @@ class Configuration extends Record
         if (!$this->serverData) {
             $this->serverData = (array) $_SERVER;
         }
+
         if (!$this->getData) {
             $this->getData = (array) $_GET;
         }
+
         if (!$this->postData) {
             $this->postData = (array) $_POST;
         }
