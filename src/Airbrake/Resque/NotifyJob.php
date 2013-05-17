@@ -1,8 +1,6 @@
 <?php
 namespace Airbrake\Resque;
 
-require_once realpath(__DIR__.'/../Client.php');
-
 use Airbrake\Connection;
 
 class NotifyJob

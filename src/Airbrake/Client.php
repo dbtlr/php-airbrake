@@ -3,14 +3,6 @@ namespace Airbrake;
 
 use Exception;
 
-require_once realpath(__DIR__.'/Record.php');
-require_once realpath(__DIR__.'/Configuration.php');
-require_once realpath(__DIR__.'/Connection.php');
-require_once realpath(__DIR__.'/Version.php');
-require_once realpath(__DIR__.'/Exception.php');
-require_once realpath(__DIR__.'/Notice.php');
-require_once realpath(__DIR__.'/Resque/NotifyJob.php');
-
 /**
  * Airbrake client class.
  *

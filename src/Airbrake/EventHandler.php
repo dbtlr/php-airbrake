@@ -3,9 +3,6 @@ namespace Airbrake;
 
 use Exception;
 
-require_once 'Client.php';
-require_once 'Configuration.php';
-
 /**
  * Airbrake EventHandler class.
  *
