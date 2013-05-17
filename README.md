@@ -104,3 +104,4 @@ Configuration Options
 - **url** - The main URL that was requested.
 - **hostname** - The hostname that was requested.
 - **queue** - Optional - the name of the Resque queue to use.
+- **secure** - Optional - Boolean that allows you to define if you want to hit the secure Airbrake endpoint.
