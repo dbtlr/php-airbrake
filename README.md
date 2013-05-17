@@ -84,7 +84,7 @@ Airbrake\EventHandler::start('[your api key]', true, array('queue' => 'airbrake'
 In order to start the requested queue, simply run this command.
 
 ```
-QUEUE=airbrake APP_INCLUDE=php-airbrake/src/Airbrake/Client.php php php-resque/resque.php
+QUEUE=airbrake APP_INCLUDE=vendor/autoload.php vendor/bin/resque
 ```
 
 This will start the queue running properly.
