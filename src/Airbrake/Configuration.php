@@ -30,7 +30,10 @@ class Configuration extends Record
     protected $_url;
     protected $_hostname;
     protected $_queue;
-    protected $_apiEndPoint  = 'http://api.airbrake.io/notifier_api/v2/notices';
+    protected $_secure = false;
+    protected $_host = 'api.airbrake.io';
+    protected $_resource = '/notifier_api/v2/notices';
+    protected $_apiEndPoint;
 
     /**
      * Load the given data array to the record.
@@ -76,6 +79,9 @@ class Configuration extends Record
         if (!$this->hostname) {
             $this->hostname = isset($this->serverData['HTTP_HOST']) ? $this->serverData['HTTP_HOST'] : 'No Host';
         }
+
+        $protocol = $this->secure ? 'https' : 'http';
+        $this->apiEndPoint = $protocol.'//'.$this->host.$this->resource;
     }
 
     /**
