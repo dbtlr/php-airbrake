@@ -104,16 +104,16 @@ class EventHandler
             return true;
         }
 
-        $backtrace = debug_backtrace();
-        array_shift( $backtrace );
-
         if (isset($this->fatalErrors[$type])) {
-            throw new Exception(sprintf('A PHP error occurred (%s). %s', $this->fatalErrors[$type], $message));
+            throw new Exception($message);
         }
 
-        if ($this->notifyOnWarning && isset ( $this->warningErrors[$type])) {
-            $message = sprintf('A PHP warning occurred (%s). %s', $this->warningErrors[$type], $message);
-            $this->airbrakeClient->notifyOnError($message);
+        if ($this->notifyOnWarning && isset ($this->warningErrors[$type])) {
+            // Make sure we pass in the current backtrace, minus this function call.
+            $backtrace = debug_backtrace();
+            array_shift($backtrace);
+
+            $this->airbrakeClient->notifyOnError($message, $backtrace);
             return true;
         }
 
@@ -164,10 +164,16 @@ class EventHandler
             return;
         }
 
-        $message = '[SHUTDOWN] %s  File: %s  Line: %d';
+        // Build a fake backtrace, so we at least can show where we came from.
+        $backtrace = array(
+            array(
+                'file' => $error['file'],
+                'line' => $error['line'],
+                'function' => '',
+                'args' => array(),
+            )
+        );
 
-        $message = sprintf($message, $error['message'], $error['file'], $error['line']);
-
-        $this->airbrakeClient->notifyOnError($message);
+        $this->airbrakeClient->notifyOnError('[Improper Shutdown] '.$message, $backtrace);
     }
 }
