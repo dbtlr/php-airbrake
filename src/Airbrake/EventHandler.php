@@ -20,6 +20,8 @@ class EventHandler
     protected $airbrakeClient  = null;
     protected $notifyOnWarning = null;
 
+    protected $previousExceptionHandler = null;
+
     protected $warningErrors = array(\E_NOTICE            => 'Notice',
                                      \E_STRICT            => 'Strict',
                                      \E_USER_WARNING      => 'User Warning',
@@ -65,7 +67,7 @@ class EventHandler
             self::$instance = new self($client, $notifyOnWarning);
 
             set_error_handler(array(self::$instance, 'onError'));
-            set_exception_handler(array(self::$instance, 'onException'));
+            self::$instance->previousExceptionHandler = set_exception_handler(array(self::$instance, 'onException'));
             register_shutdown_function(array(self::$instance, 'onShutdown'));
         }
 
@@ -131,6 +133,11 @@ class EventHandler
     public function onException(Exception $exception)
     {
         $this->airbrakeClient->notifyOnException($exception);
+
+        // Forward exception to previous handler.
+        if ($this->previousExceptionHandler !== null) {
+            call_user_func($this->previousExceptionHandler, $exception);
+        }
 
         return true;
     }
