@@ -79,7 +79,7 @@ class Configuration extends Record
             $this->hostname = isset($this->serverData['HTTP_HOST']) ? $this->serverData['HTTP_HOST'] : 'No Host';
         }
 
-        $proto = ($this->_secure === true) ? 'https://' : 'http://'
+        $proto = ($this->_secure === true) ? 'https://' : 'http://';
         $this->apiEndPoint = $proto . $this->host . $this->resource;
     }
 
