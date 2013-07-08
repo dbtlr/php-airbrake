@@ -79,7 +79,7 @@ class Configuration extends Record
         }
 
         $protocol = $this->secure ? 'https' : 'http';
-        $this->apiEndPoint = $protocol.'://'.$this->host.$this->resource;
+        $this->apiEndPoint = $this->apiEndPoint ?: $protocol.'://'.$this->host.$this->resource;
     }
 
     /**
