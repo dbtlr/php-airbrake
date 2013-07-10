@@ -121,6 +121,6 @@ class Connection
     {
         return $responseStatus == 403 && $answer == 'Creation of this event was blocked'
             || $responseStatus == 405 && strpos($answer, 'Creation of this event was denied due to rate limiting') !== false
-            || $responseStatus == 429 && strpos($answer, 'Your request was denied due to burst rate limits') !== false;
+            || $responseStatus == 429 && (!$answer || strpos($answer, 'Your request was denied due to burst rate limits') !== false);
     }
 }
