@@ -54,9 +54,9 @@ class Connection
     public function send(Notice $notice)
     {
         $config = $this->configuration;
-        $xml    = $notice->buildJSON($config);
+        $json   = $notice->getJSON();
 
-        $result = self::notify($xml, $config->apiEndPoint, $config->timeout, $this->headers, $notice->errorMessage,
+        $result = self::notify($json, $config->apiEndPoint, $config->timeout, $this->headers, $notice->errorMessage,
             $config->arrayReportDatabaseClass, $notice->dbId,
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); },
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true, true); }

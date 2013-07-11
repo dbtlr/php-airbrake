@@ -21,9 +21,10 @@ require_once realpath(__DIR__.'/IArrayReportDatabaseObject.php');
  */
 class Client
 {
-    protected $configuration = null;
-    protected $connection    = null;
-    protected $notice        = null;
+    protected $configuration  = null;
+    protected $connection     = null;
+    protected $notice         = null;
+    protected $eventCallbacks = array();
 
     /**
      * Build the Client with the Airbrake Configuration.
@@ -63,7 +64,7 @@ class Client
             }
         }
 
-        $notice = new Notice;
+        $notice = new Notice($this->configuration);
         $notice->load(array(
             'backtrace'    => array_merge($backtraceFirstLine, $backtrace),
             'errorMessage' => $message,
@@ -81,7 +82,7 @@ class Client
      */
     public function notifyOnException(\Exception $exception)
     {
-        $notice = new Notice;
+        $notice = new Notice($this->configuration);;
 
         // add the actual file/line # of the error as the first item of the backtrace
         $backtrace = array(
@@ -125,13 +126,14 @@ class Client
     private function notify(Notice $notice)
     {
         $config = $this->configuration;
+        $eventId = $notice->getEventId();
+
         // if another class to notify later has been provided, try to use that
         if ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
-                $json = $notice->buildJSON($config);
                 if (!$delayedNotifClass::createDelayedNotification(
-                        $notice->eventId,
-                        $json,
+                        $eventId,
+                        $notice->getJSON(),
                         $config->apiEndPoint,
                         $config->delayedTimeout,
                         Connection::getDefaultHeaders($config),
@@ -149,11 +151,27 @@ class Client
         }
 
         // nothing fancy, we just notify in a blocking way...
-        return $this->connection->send($notice);
+        $this->connection->send($notice);
+
+        // call the event callbacks
+        foreach ($this->eventCallbacks as $callback) {
+            $callback->call($eventId);
+        }
     }
 
     public function getConfiguration()
     {
         return $this->configuration;
     }
+
+    /**
+     * Allows to register callbacks that will get called with every
+     * record created with the event's ID as a single argument
+     * USE WITH CARE! It's your responsibility to make sure that callback runs fast and without errors
+     */
+    public function registerEventCallback($callback)
+    {
+        $this->eventCallbacks[] = new AirbrakeCallback($callback);
+    }
+
 }

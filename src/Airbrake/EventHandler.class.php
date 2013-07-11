@@ -283,7 +283,7 @@ class EventHandler
 
     public static function getClient()
     {
-        if (self::$instance == null) {
+        if (self::$instance === null) {
             return null;
         }
         return self::$instance->airbrakeClient;
