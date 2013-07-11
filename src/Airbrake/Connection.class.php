@@ -54,7 +54,7 @@ class Connection
     public function send(Notice $notice)
     {
         $config = $this->configuration;
-        $json   = $notice->getJSON($config);
+        $json   = $notice->getJSON();
 
         $result = self::notify($json, $config->apiEndPoint, $config->timeout, $this->headers, $notice->errorMessage,
             $config->arrayReportDatabaseClass, $notice->dbId,

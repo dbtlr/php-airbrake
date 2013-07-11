@@ -64,7 +64,7 @@ class Client
             }
         }
 
-        $notice = new Notice;
+        $notice = new Notice($this->configuration);
         $notice->load(array(
             'backtrace'    => array_merge($backtraceFirstLine, $backtrace),
             'errorMessage' => $message,
@@ -82,7 +82,7 @@ class Client
      */
     public function notifyOnException(\Exception $exception)
     {
-        $notice = new Notice;
+        $notice = new Notice($this->configuration);;
 
         // add the actual file/line # of the error as the first item of the backtrace
         $backtrace = array(
@@ -126,14 +126,14 @@ class Client
     private function notify(Notice $notice)
     {
         $config = $this->configuration;
-        $eventId = $notice->getEventId($config);
+        $eventId = $notice->getEventId();
 
         // if another class to notify later has been provided, try to use that
         if ($delayedNotifClass = $config->get('delayedNotificationClass')) {
             try {
                 if (!$delayedNotifClass::createDelayedNotification(
                         $eventId,
-                        $notice->getJSON($config),
+                        $notice->getJSON(),
                         $config->apiEndPoint,
                         $config->delayedTimeout,
                         Connection::getDefaultHeaders($config),

@@ -31,27 +31,35 @@ class Notice extends Record
      */
     protected $_eventId = null;
 
-    // the max length for a string representing an array argument of a function
-    const MAX_ARRAY_ARG_STRING_LENGTH  = 1000;
-    // the max length for a string representing a single argument of a function
-    const MAX_SINGLE_ARG_STRING_LENGTH = 200;
-
     /**
      * The memoized JSON
      */
     protected $_json = null;
 
     /**
+     * The current Sentry configuration
+     */
+    protected $_configuration = null;
+
+    // the max length for a string representing an array argument of a function
+    const MAX_ARRAY_ARG_STRING_LENGTH  = 1000;
+    // the max length for a string representing a single argument of a function
+    const MAX_SINGLE_ARG_STRING_LENGTH = 200;
+
+    public function __construct(Configuration $configuration, $data = array())
+    {
+        $this->configuration = $configuration;
+        parent::__construct($data);
+    }
+
+    /**
      * Returns the JSON expected by Sentry
      *
-     * @param Airbrake\Configuration $configuration
      * @return string
      */
-    public function getJSON(Configuration $configuration)
+    public function getJSON()
     {
-        if ($this->json === null) {
-            $this->json = $this->buildJSON($configuration);
-        }
+        $this->buildJSON();
         return $this->json;
     }
 
@@ -59,23 +67,24 @@ class Notice extends Record
      * Returns the Sentry Event ID
      * (generates the JSON if not done yet)
      *
-     * @see getJSON
+     * @return string
      */
-    public function getEventId(Configuration $configuration)
+    public function getEventId()
     {
-        if ($this->eventId === null) {
-            $this->json = $this->buildJSON($configuration);
-        }
+        $this->buildJSON();
         return $this->eventId;
     }
 
     /**
-     * Converts the notice to JSON
-     *
-     * @see getJSON
+     * Converts the notice to JSON, and also saves it in the DB if applicable
      */
-    private function buildJSON(Configuration $configuration)
+    private function buildJSON()
     {
+        if ($this->json !== null) {
+            return;
+        }
+
+        $configuration = $this->configuration;
         $timestamp = time();
 
         // basic options
@@ -147,7 +156,7 @@ class Notice extends Record
             self::pruneArgs($result);
         }
 
-        return json_encode($result);
+        $this->json = json_encode($result);
     }
 
     // generates a stacktrace for this entry (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
