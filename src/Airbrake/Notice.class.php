@@ -37,13 +37,44 @@ class Notice extends Record
     const MAX_SINGLE_ARG_STRING_LENGTH = 200;
 
     /**
-     * Convert the notice to xml
-     * see doc @ http://help.airbrake.io/kb/api-2/notifier-api-version-22
-     * 
-     * @param Airbrake\Configuration $configuration
-     * @return array
+     * The memoized JSON
      */
-    public function buildJSON(Configuration $configuration)
+    protected $_json = null;
+
+    /**
+     * Returns the JSON expected by Sentry
+     *
+     * @param Airbrake\Configuration $configuration
+     * @return string
+     */
+    public function getJSON(Configuration $configuration)
+    {
+        if ($this->json === null) {
+            $this->json = $this->buildJSON($configuration);
+        }
+        return $this->json;
+    }
+
+    /**
+     * Returns the Sentry Event ID
+     * (generates the JSON if not done yet)
+     *
+     * @see getJSON
+     */
+    public function getEventId(Configuration $configuration)
+    {
+        if ($this->eventId === null) {
+            $this->json = $this->buildJSON($configuration);
+        }
+        return $this->eventId;
+    }
+
+    /**
+     * Converts the notice to JSON
+     *
+     * @see getJSON
+     */
+    private function buildJSON(Configuration $configuration)
     {
         $timestamp = time();
 
