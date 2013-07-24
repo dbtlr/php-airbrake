@@ -60,7 +60,7 @@ class Notice extends Record
     public function getJSON()
     {
         $this->buildJSON();
-        return $this->_json;
+        return $this->json;
     }
 
     /**
@@ -80,7 +80,7 @@ class Notice extends Record
      */
     private function buildJSON()
     {
-        if ($this->_json !== null) {
+        if ($this->json !== null) {
             return;
         }
 
@@ -156,7 +156,7 @@ class Notice extends Record
             self::pruneArgs($result);
         }
 
-        $this->_json = json_encode($result);
+        $this->json = json_encode($result);
     }
 
     // generates a stacktrace for this entry (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
