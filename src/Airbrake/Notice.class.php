@@ -89,7 +89,7 @@ class Notice extends Record
 
         // basic options
         $result = array(
-            'message'    => $this->errorMessage,
+            'message'    => static::sanitizeMessage($this->errorMessage, $configuration),
             'timestamp'  => date('c', $timestamp),
             'level'      => $this->level,
             'logger'     => Version::NAME,
@@ -157,6 +157,18 @@ class Notice extends Record
         }
 
         $this->_json = json_encode($result);
+    }
+
+    // removes any unwanted string from the error message
+    private static function sanitizeMessage($errorMessage, Configuration $configuration)
+    {
+        $blacklistedStrings = $configuration->blacklistedStringsInMsgCallback ? $configuration->blacklistedStringsInMsgCallback->call() : null;
+        if (!$blacklistedStrings) {
+            return $errorMessage;
+        }
+        return str_replace($blacklistedStrings,
+            array_fill(0, count($blacklistedStrings), '[BLACKLISTED STRING]'),
+            $errorMessage);
     }
 
     // generates a stacktrace for this entry (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)

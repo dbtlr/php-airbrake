@@ -23,18 +23,19 @@ class Configuration extends Record
     protected $_platform    = 'php';
 
     // what to report, and what to add in the reports
-    protected $_handleSeamlessly               = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
-    protected $_errorReporting                 = E_ALL;   // (cf http://php.net/manual/en/errorfunc.constants.php)
-    protected $_silentExceptionClasses         = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
-    protected $_tagsCallback                   = null;    // an AirbrakeCallback to build the tags to include in every report - must return an array
-    protected $_extraCallback                  = null;    // exact same as 'tagsCallback', except it's for extras
-    protected $_interfacesCallback             = null;    // yet another AirbrakeCallback, for Sentry interfaces (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
-                                                          // must return an array mapping interfaces' names with their content
-    protected $_sendArgumentsToAirbrake        = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
-                                                          // sensitive data in your Airbrake reports)
-    protected $_blacklistedScalarArgsCallback  = null;    // an AirbrakeCallback that returns an array of scalars that won't ever be reported in the backtraces' arguments
-    protected $_blacklistedRegexArgsCallback   = null;    // an AirbrakeCallback that returns an array of regular expressions that will prevent any scalar matching them from being
-                                                          // included into the backtraces' arguments
+    protected $_handleSeamlessly                = false;   // if true, it handles events seamlessly (ie they get logged in Airbrake but are still left uncaught to be logged further down - e.g. in the web server's logs)
+    protected $_errorReporting                  = E_ALL;   // (cf http://php.net/manual/en/errorfunc.constants.php)
+    protected $_silentExceptionClasses          = array(); // exception classes that won't be logged (nor re-thrown if the seamless mode is on)
+    protected $_tagsCallback                    = null;    // an AirbrakeCallback to build the tags to include in every report - must return an array
+    protected $_extraCallback                   = null;    // exact same as 'tagsCallback', except it's for extras
+    protected $_interfacesCallback              = null;    // yet another AirbrakeCallback, for Sentry interfaces (see http://sentry.readthedocs.org/en/latest/developer/interfaces/index.html)
+                                                           // must return an array mapping interfaces' names with their content
+    protected $_sendArgumentsToAirbrake         = true;    // if turned off, we won't send function arguments to Airbrake (you might want to use that to avoid including
+                                                           // sensitive data in your Airbrake reports)
+    protected $_blacklistedScalarArgsCallback   = null;    // an AirbrakeCallback that returns an array of scalars that won't ever be reported in the backtraces' arguments
+    protected $_blacklistedRegexArgsCallback    = null;    // an AirbrakeCallback that returns an array of regular expressions that will prevent any scalar matching them from being
+                                                           // included into the backtraces' arguments
+    protected $_blacklistedStringsInMsgCallback = null;    // an AirbrakeCallback that returns an array of strings that will be redacted if they appear in an error message
 
     // timeouts
     protected $_timeout        = 2;  // timeout when reporting in real time
