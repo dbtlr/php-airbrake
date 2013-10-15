@@ -136,7 +136,7 @@ class Client
                         $notice->getJSON(),
                         $config->apiEndPoint,
                         $config->delayedTimeout,
-                        Connection::getDefaultHeaders($config),
+                        $this->connection->getDefaultHeaders(),
                         $notice->errorMessage,
                         $config->arrayReportDatabaseClass,
                         $config->errorNotificationCallback,
