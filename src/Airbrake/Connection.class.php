@@ -108,7 +108,7 @@ class Connection
     private static function isThrottlingErrorMessage($responseStatus, $answer)
     {
         return $responseStatus == 403 && $answer == 'Creation of this event was blocked'
-            || $responseStatus == 405 && strpos($answer, 'Creation of this event was denied due to rate limiting') !== false
-            || $responseStatus == 429 && (!$answer || strpos($answer, 'Your request was denied due to burst rate limits') !== false);
+            || strpos($answer, 'Creation of this event was denied due to rate limiting') !== false
+            || $responseStatus == 429;
     }
 }
