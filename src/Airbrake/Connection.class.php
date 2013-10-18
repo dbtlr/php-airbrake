@@ -15,7 +15,6 @@ class Connection
 {
 
     protected $configuration = null;
-    protected $headers = array();
 
     /**
      * Build the object with the airbrake Configuration.
@@ -25,24 +24,13 @@ class Connection
     public function __construct(Configuration $configuration)
     {
         $this->configuration = $configuration;
-        $this->addHeader(self::getDefaultHeaders($configuration));
     }
 
-    /**
-     * Add a header to the connection.
-     *
-     * @param string header
-     */
-    private function addHeader($header)
-    {
-        $this->headers += (array)$header;
-    }
-
-    public static function getDefaultHeaders(Configuration $configuration)
+    public function getDefaultHeaders()
     {
         $userAgent = Version::NAME.'/'.Version::NUMBER;
         return array('User-Agent: '.$userAgent,
-            'X-Sentry-Auth: Sentry sentry_timestamp='.time().', sentry_client='.$userAgent.', sentry_version='.Version::API.', sentry_key='.$configuration->apiKey,
+            'X-Sentry-Auth: Sentry sentry_timestamp='.time().', sentry_client='.$userAgent.', sentry_version='.Version::API.', sentry_key='.$this->configuration->apiKey,
             "Content-Type: application/octet-stream"
         );
     }
@@ -56,7 +44,7 @@ class Connection
         $config = $this->configuration;
         $json   = $notice->getJSON();
 
-        $result = self::notify($json, $config->apiEndPoint, $config->timeout, $this->headers, $notice->errorMessage,
+        $result = self::notify($json, $config->apiEndPoint, $config->timeout, $this->getDefaultHeaders(), $notice->errorMessage,
             $config->arrayReportDatabaseClass, $notice->dbId,
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); },
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true, true); }
@@ -120,7 +108,7 @@ class Connection
     private static function isThrottlingErrorMessage($responseStatus, $answer)
     {
         return $responseStatus == 403 && $answer == 'Creation of this event was blocked'
-            || $responseStatus == 405 && strpos($answer, 'Creation of this event was denied due to rate limiting') !== false
-            || $responseStatus == 429 && (!$answer || strpos($answer, 'Your request was denied due to burst rate limits') !== false);
+            || strpos($answer, 'Creation of this event was denied due to rate limiting') !== false
+            || $responseStatus == 429;
     }
 }

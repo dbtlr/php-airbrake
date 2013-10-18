@@ -89,13 +89,17 @@ abstract class Record implements ArrayAccess, IteratorAggregate
      *
      * @param string $key
      * @param mixed $value
+     *
+     * @return mixed The previous value
      */
     public function set($key, $value)
     {
+        $previousValue = $this->get($key);
         if ($this->exists($key)) {
             $key = self::PREFIX.$key;
             $this->$key = $value;
         }
+        return $previousValue;
     }
 
     /**
