@@ -44,8 +44,12 @@ class Connection
         $config = $this->configuration;
         $json   = $notice->getJSON();
 
-        $result = self::notify($json, $config->apiEndPoint, $config->timeout, $this->getDefaultHeaders(), $notice->errorMessage,
-            $config->arrayReportDatabaseClass, $notice->dbId,
+        $result = self::notify($json,
+            $config->apiEndPoint,
+            $config->timeout,
+            $this->getDefaultHeaders(),
+            $notice->errorMessage,
+            $config->arrayReportDatabaseClass,
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true); },
             function(AirbrakeException $e) use($config) { $config->notifyUpperLayer($e, true, true); }
         );
@@ -86,7 +90,6 @@ class Connection
                     // just log 'over the limit' errors to the secondary notifier, if any exists, otherwise ignore them
                     $exception = new AirbrakeException("Over plan limit, didn't log error: $errorMessage");
                     $exception->setShortDescription('Airbrake API throttling error');
-                    $exception->setLogNamespace('airbrake_api_throttling');
                     call_user_func_array($secondaryCallback, array($exception));
                 }
             } else {

@@ -11,16 +11,13 @@ namespace Airbrake;
  */
 class AirbrakeException extends \Exception
 {
-    // a string to put in an email subject line
+    // a string to put in an email subject line, typically
     private $shortDescription = null;
-    // a tag to log errors
-    private $logNamespace     = null;
 
     public function __construct($message = '', $shortDescription = null, $logNamespace = null)
     {
         parent::__construct($message);
         $this->setShortDescription($shortDescription);
-        $this->setLogNamespace($logNamespace);
     }
 
     public function setShortDescription($descr)
@@ -32,15 +29,4 @@ class AirbrakeException extends \Exception
     {
         return $this->shortDescription ? : 'Airbrake error';
     }
-
-    public function setLogNamespace($ns)
-    {
-        $this->logNamespace = $ns;
-    }
-
-    public function getLogNamespace()
-    {
-        return $this->logNamespace ? : 'airbrake_default_log_namespace';
-    }
-
 }
