@@ -78,11 +78,14 @@ class Client
      * Notify on an exception
      *
      * @param Airbrake\Notice $notice
+     * @param array|null $additionalExtra  A dict of additional extra data to include in the report
+     * @param array|null $additionalTags   Same, for tags
+     *
      * @return string
      */
     public function notifyOnException(\Exception $exception,
-        array $additionalExtra = array(),
-        array $additionalTags = array()
+        $additionalExtra = null,
+        $additionalTags = null
     )
     {
         $notice = new Notice($this->configuration);

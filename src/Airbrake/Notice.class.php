@@ -34,12 +34,12 @@ class Notice extends Record
     /**
      * Additional 'extra' data for the current notice
      */
-    protected $_additionalExtra = array();
+    protected $_additionalExtra = null;
 
     /**
      * Additional 'tags' data for the current notice
      */
-    protected $_additionalTags = array();
+    protected $_additionalTags = null;
 
     /**
      * The memoized JSON
