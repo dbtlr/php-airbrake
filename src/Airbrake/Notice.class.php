@@ -32,6 +32,16 @@ class Notice extends Record
     protected $_eventId = null;
 
     /**
+     * Additional 'extra' data for the current notice
+     */
+    protected $_additionalExtra = array();
+
+    /**
+     * Additional 'tags' data for the current notice
+     */
+    protected $_additionalTags = array();
+
+    /**
      * The memoized JSON
      */
     protected $_json = null;
@@ -96,10 +106,21 @@ class Notice extends Record
             'platform'   => $configuration->platform,
             'servername' => gethostname()
         );
+
         // tags and extras
         foreach (array('tags', 'extra') as $key) {
+            // first from the config
             if (($callback = $configuration->get($key.'Callback')) && ($data = $callback->call())) {
                 $result[$key] = $data;
+            }
+            // then local ones for this notice
+            $attribute = 'additional'.ucfirst($key);
+            if ($this->$attribute) {
+                if (array_key_exists($key, $result)) {
+                    $result[$key] = array_merge($result[$key], $this->$attribute);
+                } else {
+                    $result[$key] = $this->$attribute;
+                }
             }
         }
 

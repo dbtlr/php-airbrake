@@ -80,9 +80,12 @@ class Client
      * @param Airbrake\Notice $notice
      * @return string
      */
-    public function notifyOnException(\Exception $exception)
+    public function notifyOnException(\Exception $exception,
+        array $additionalExtra = array(),
+        array $additionalTags = array()
+    )
     {
-        $notice = new Notice($this->configuration);;
+        $notice = new Notice($this->configuration);
 
         // add the actual file/line # of the error as the first item of the backtrace
         $backtrace = array(
@@ -105,9 +108,11 @@ class Client
             $classException = get_class($exception);
         }
         $notice->load(array(
-            'backtrace'    => $backtrace,
-            'errorMessage' => $prefix.' '.$classException.' : '.$exception->getMessage(),
-            'level'        => 'error',
+            'backtrace'       => $backtrace,
+            'errorMessage'    => $prefix.' '.$classException.' : '.$exception->getMessage(),
+            'level'           => 'error',
+            'additionalExtra' => $additionalExtra,
+            'additionalTags'  => $additionalTags
         ));
 
         return $this->notify($notice);
