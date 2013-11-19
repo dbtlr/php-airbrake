@@ -78,11 +78,17 @@ class Client
      * Notify on an exception
      *
      * @param Airbrake\Notice $notice
+     * @param array|null $additionalExtra  A dict of additional extra data to include in the report
+     * @param array|null $additionalTags   Same, for tags
+     *
      * @return string
      */
-    public function notifyOnException(\Exception $exception)
+    public function notifyOnException(\Exception $exception,
+        $additionalExtra = null,
+        $additionalTags = null
+    )
     {
-        $notice = new Notice($this->configuration);;
+        $notice = new Notice($this->configuration);
 
         // add the actual file/line # of the error as the first item of the backtrace
         $backtrace = array(
@@ -105,9 +111,11 @@ class Client
             $classException = get_class($exception);
         }
         $notice->load(array(
-            'backtrace'    => $backtrace,
-            'errorMessage' => $prefix.' '.$classException.' : '.$exception->getMessage(),
-            'level'        => 'error',
+            'backtrace'       => $backtrace,
+            'errorMessage'    => $prefix.' '.$classException.' : '.$exception->getMessage(),
+            'level'           => 'error',
+            'additionalExtra' => $additionalExtra,
+            'additionalTags'  => $additionalTags
         ));
 
         return $this->notify($notice);
