@@ -130,6 +130,9 @@ class EventHandler
 
             // fatal errors
             register_shutdown_function(array(self::$instance, 'onShutdown'));
+
+            // report any error that might have been triggered before starting
+            self::$instance->reportLastError();
         }
 
         return self::$instance;
@@ -157,10 +160,10 @@ class EventHandler
      * @param string $message
      * @param string $file
      * @param string $line
-     * @param array $context
+     *
      * @return bool
      */
-    public function onError($type, $message, $file = null, $line = null, $context = null)
+    public function onError($type, $message, $file = null, $line = null)
     {
         // if the seamless mode is activated, return false to let the error bubble up
         // otherwise, return true to stop it here (see set_error_handler doc)
@@ -297,6 +300,15 @@ class EventHandler
     public static function getInstance()
     {
         return self::$instance;
+    }
+
+    // reports whatever the last error was
+    private function reportLastError()
+    {
+        if ($error = error_get_last()) {
+            return $this->onError($error['type'], $error['message'], $error['file'], $error['line']);
+        }
+        return false;
     }
 
     private function hashError($type, $message, $file, $line)
