@@ -32,6 +32,9 @@ class Configuration extends Record
     protected $_apiEndPoint;
     protected $_filters = array();
     protected $_async = false;
+    protected $_port = 443;
+    protected $_secure = true;
+    protected $_verifySsl = true;
 
     /**
      * Load the given data array to the record.
@@ -76,7 +79,8 @@ class Configuration extends Record
             $this->hostname = isset($this->serverData['HTTP_HOST']) ? $this->serverData['HTTP_HOST'] : 'No Host';
         }
 
-        $this->apiEndPoint = 'http://'.$this->host.$this->resource;
+        $proto = ($this->_secure === true) ? 'https://' : 'http://';
+        $this->apiEndPoint = $proto . $this->host . $this->resource;
     }
 
     /**

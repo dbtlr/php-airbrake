@@ -60,6 +60,12 @@ class Connection
 		  curl_setopt($curl, CURLOPT_HTTPHEADER, $this->headers);
   		curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
+      if ($this->configuration->verifySsl === true) {
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, true);
+      } else {
+        curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+      }
+
       $return = curl_exec($curl);
 	  	curl_close($curl);
 
@@ -73,7 +79,7 @@ class Connection
    * a response if the user has opted for async notifications
    */
   private function sendAsync(Notice $notice) {
-    $fp = fsockopen($this->configuration->host,80);
+    $fp = fsockopen($this->configuration->host, $this->configuration->port);
     if(!$fp) {
       return false;
     }
