@@ -79,7 +79,7 @@ class Connection
    * a response if the user has opted for async notifications
    */
   private function sendAsync(Notice $notice) {
-    $fp = fsockopen($this->configuration->host, $this->configuration->port);
+    $fp = fsockopen(($this->configuration->secure ? 'ssl://' : '') . $this->configuration->host, $this->configuration->port);
     if(!$fp) {
       return false;
     }
