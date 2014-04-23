@@ -174,6 +174,6 @@ class EventHandler
             )
         );
 
-        $this->airbrakeClient->notifyOnError('[Improper Shutdown] '.$message, $backtrace);
+        $this->airbrakeClient->notifyOnError('[Improper Shutdown] '.$error['message'], $backtrace);
     }
 }
