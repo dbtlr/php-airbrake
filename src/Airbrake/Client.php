@@ -30,6 +30,14 @@ class Client
         $this->configuration = $configuration;
         $this->connection    = new Connection($configuration);
     }
+    
+    /**
+     * @return Configuration
+     */
+    public function getConfiguration()
+    {
+        return $this->configuration;
+    }
 
     /**
      * Notify on an error message.
