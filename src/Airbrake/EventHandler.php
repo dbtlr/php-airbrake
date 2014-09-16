@@ -49,6 +49,22 @@ class EventHandler
     }
 
     /**
+     * @return self
+     */
+    public static function getInstance()
+    {
+        return self::$instance;
+    }
+
+    /**
+     * @return Airbrake\Client
+     */
+    public function getClient()
+    {
+        return $this->airbrakeClient;
+    }
+
+    /**
      * Get the current handler.
      *
      * @param string $apiKey
