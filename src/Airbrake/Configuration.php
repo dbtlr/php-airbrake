@@ -50,19 +50,19 @@ class Configuration extends Record
      */
     protected function initialize()
     {
-        if (!$this->serverData) {
+        if ($this->serverData === null) {
             $this->serverData = (array) $_SERVER;
         }
 
-        if (!$this->getData) {
+        if ($this->getData === null) {
             $this->getData = (array) $_GET;
         }
 
-        if (!$this->postData) {
+        if ($this->postData === null) {
             $this->postData = (array) $_POST;
         }
 
-        if (!$this->sessionData && isset($_SESSION)) {
+        if ($this->sessionData === null && isset($_SESSION)) {
             $this->sessionData = (array) $_SESSION;
         }
 
