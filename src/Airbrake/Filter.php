@@ -2,15 +2,39 @@
 
 namespace Airbrake;
 
+/**
+ * Airbrake standard filter class. Used to filter post/get data before it is 
+ * sent over to the server. Intended use case is to filter out sensitive 
+ * information such as passwords or credit card details.
+ *
+ * @package    Airbrake
+ * @author     Leon Szkliniarz <leon@llamadigital.net>
+ * @copyright  (c) 2014 Leon Szkliniarz
+ * @license    http://www.opensource.org/licenses/mit-license.php
+ */
 class Filter implements Filter\FilterInterface
 {
     private $key_parts = array();
 
+    /**
+     * Create a Filter class based on a string key_name. Expects key_name to be 
+     * in the same format as a form name - so to filter out the value inside 
+     * $_POST['user']['password'] you would give it the value 'user[password]'
+     *
+     * @param string $key_name
+     */
     public function __construct($key_name)
     {
         $this->splitKeyName($key_name);
     }
 
+    /**
+     * Applies the current filters to the passed in array, unsetting any 
+     * elements which match the filter. Note that this works via reference and 
+     * will mutate its argument instead of returning a copy.
+     *
+     * @param string &$array
+     */
     public function filter(&$array)
     {
         $current = &$array;
