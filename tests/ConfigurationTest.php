@@ -7,8 +7,8 @@ class ConfigurationTest extends PHPUnit_Framework_TestCase
 {
   public function testFiltersApplied()
   {
-    $initial = ['foo' => 1, 'bar' => 2];
-    $expected = ['foo' => 1];
+    $initial = array('foo' => 1, 'bar' => 2);
+    $expected = array('foo' => 1);
 
     $config = new Airbrake\Configuration('test', ['postData' => $initial]);
     $config->addFilter('bar');
@@ -17,8 +17,8 @@ class ConfigurationTest extends PHPUnit_Framework_TestCase
 
   public function testFiltersNotAppliedOnUnfilteredParameters()
   {
-    $initial = ['foo' => 1, 'bar' => 2];
-    $expected = ['foo' => 1, 'bar' => 2];
+    $initial = array('foo' => 1, 'bar' => 2);
+    $expected = array('foo' => 1, 'bar' => 2);
 
     $config = new Airbrake\Configuration('test', ['postData' => $initial]);
     $config->addFilter('bar');
@@ -27,8 +27,8 @@ class ConfigurationTest extends PHPUnit_Framework_TestCase
 
   public function testCustomFilter()
   {
-    $initial = ['foo' => 1, 'bar' => 2];
-    $expected = ['bar' => 2];
+    $initial = array('foo' => 1, 'bar' => 2);
+    $expected = array('bar' => 2);
     $instance = new CustomFilter('foo');
 
     $config = new Airbrake\Configuration('test', ['postData' => $initial]);

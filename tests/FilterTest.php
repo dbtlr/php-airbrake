@@ -9,57 +9,57 @@ class FilterTest extends PHPUnit_Framework_TestCase
 
   public function testNoFilter()
   {
-    $initial = ['foo' => 1, 'bar' => 2];
-    $filters = [];
-    $expected = ['foo' => 1, 'bar' => 2];
+    $initial = array('foo' => 1, 'bar' => 2);
+    $filters = array();
+    $expected = array('foo' => 1, 'bar' => 2);
     $this->doTest($initial, $filters, $expected);
   }
 
   public function testSingleFilter()
   {
-    $initial = ['foo' => 1, 'bar' => 2];
-    $filters = ['foo'];
-    $expected = ['bar' => 2];
+    $initial = array('foo' => 1, 'bar' => 2);
+    $filters = array('foo');
+    $expected = array('bar' => 2);
     $this->doTest($initial, $filters, $expected);
   }
 
   public function testSingleFilterArray()
   {
-    $initial = ['foo' => ['test' => 1], 'bar' => 2];
-    $filters = ['foo'];
-    $expected = ['bar' => 2];
+    $initial = array('foo' => array('test' => 1), 'bar' => 2);
+    $filters = array('foo');
+    $expected = array('bar' => 2);
     $this->doTest($initial, $filters, $expected);
   }
 
   public function testMultipleFilters()
   {
-    $initial = ['foo' => 1, 'bar' => 2];
-    $filters = ['foo', 'bar'];
-    $expected = [];
+    $initial = array('foo' => 1, 'bar' => 2);
+    $filters = array('foo', 'bar');
+    $expected = array();
     $this->doTest($initial, $filters, $expected);
   }
 
   public function testSingleChildFilter()
   {
-    $initial = ['foo' => ['test' => 1], 'bar' => 2];
-    $filters = ['foo[test]'];
-    $expected = ['foo' => [], 'bar' => 2];
+    $initial = array('foo' => array('test' => 1), 'bar' => 2);
+    $filters = array('foo[test]');
+    $expected = array('foo' => array(), 'bar' => 2);
     $this->doTest($initial, $filters, $expected);
   }
 
   public function testMultipleChildFilters()
   {
-    $initial = ['foo' => ['test' => ['bar' => 1]], 'bar' => 2];
-    $filters = ['foo[test][bar]'];
-    $expected = ['foo' => ['test' => []], 'bar' => 2];
+    $initial = array('foo' => array('test' => array('bar' => 1)), 'bar' => 2);
+    $filters = array('foo[test][bar]');
+    $expected = array('foo' => array('test' => array()), 'bar' => 2);
     $this->doTest($initial, $filters, $expected);
   }
 
   public function testLevelConflict()
   {
-    $initial = ['foo' => ['bar' => 1], 'bar' => 2];
-    $filters = ['bar'];
-    $expected = ['foo' => ['bar' => 1]];
+    $initial = array('foo' => array('bar' => 1), 'bar' => 2);
+    $filters = array('bar');
+    $expected = array('foo' => array('bar' => 1));
     $this->doTest($initial, $filters, $expected);
   }
 
