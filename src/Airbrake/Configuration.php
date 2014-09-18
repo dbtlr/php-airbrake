@@ -33,6 +33,8 @@ class Configuration extends Record
     protected $_resource = '/notifier_api/v2/notices';
     protected $_apiEndPoint;
 
+    protected $_parameterFilters = array();
+
     /**
      * Load the given data array to the record.
      *
@@ -83,13 +85,83 @@ class Configuration extends Record
     }
 
     /**
-     * Get the combined server parameters.
+     * Get the combined server parameters. Note that these parameters will be 
+     * filtered according to a black list of key names to ignore. If you wish to 
+     * get the unfiltered results you should use the getUnfilteredParameters
+     * method instead.
      *
      * @return array
      */
     public function getParameters()
     {
+        $parameters = $this->getUnfilteredParameters();
+        foreach($this->_parameterFilters as $filter) {
+            $filter->filter($parameters);
+        }
+        return $parameters;
+    }
+
+    /**
+     * Get the combined server parameters without applying the registered 
+     * filters
+     *
+     * @return array
+     */
+    public function getUnfilteredParameters()
+    {
         return array_merge($this->get('postData'), $this->get('getData'));
+    }
+
+    /**
+     * Adds an entry to a black list of GET/POST parameter key names which 
+     * should not be sent to the Airbrake server. This should be used to prevent
+     * sensitive information, such as passwords or credit card details from
+     * leaving your application server via error logging.
+     *
+     * Nested keys are treated like html form names - e.g. the key name 
+     * my_form[id] would stop the value inside $_POST['my_form']['id'] 
+     * from being sent.
+     * 
+     * @param string|Airbrake\Filter\FilterInterface $key_name
+     * @return Airbrake\Configuration
+     */
+    public function addFilter($key_name)
+    {
+        if (!($key_name instanceof Filter\FilterInterface)){
+            $key_name = new Filter($key_name);
+        }
+        $this->_parameterFilters[] = $key_name;
+        return $this;
+    }
+
+    /**
+     * Adds an array of entries to a black list of GET/POST parameter key names
+     * which should not be sent to the Airbrake server. This should be used to
+     * prevent sensitive information, such as passwords or credit card details 
+     * from leaving your application server via error logging.
+     *
+     * Nested keys are treated like html form names - e.g. the key name 
+     * my_form[id] would stop the value inside $_POST['my_form']['id'] 
+     * from being sent.
+     *
+     * @param array $key_names
+     * @return Airbrake\Configuration
+     */
+    public function addFilters($key_names)
+    {
+        array_map(array($this, 'addFilter'), $key_names);
+        return $this;
+    }
+
+    /**
+     * Clears the GET/POST request key name black list.
+     *
+     * @return Airbrake\Configuration
+     */
+    public function clearFilters()
+    {
+        $this->_parameterFilters = array();
+        return $this;
     }
 
     /**
