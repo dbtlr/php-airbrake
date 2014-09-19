@@ -18,7 +18,7 @@ interface FilterInterface
    * Apply a filter to the passed in array. Note this is intended to mutate 
    * the original array and is passed in via reference.
    *
-   * @param string &$array
+   * @param array &$array
    */
   public function filter(&$array);
 }
