@@ -71,7 +71,8 @@ class Configuration extends Record
         }
 
         if (!$this->url) {
-            $this->url = isset($this->serverData['REDIRECT_URL']) ? $this->serverData['REDIRECT_URL'] : $this->serverData['SCRIPT_NAME'];
+            if (isset($this->serverData['REDIRECT_URL'])) $this->url = $this->serverData['REDIRECT_URL'];
+            elseif (isset($this->serverData['SCRIPT_NAME'])) $this->url = $this->serverData['SCRIPT_NAME'];
         }
 
         if (!$this->hostname) {
