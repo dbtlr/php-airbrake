@@ -105,3 +105,55 @@ Configuration Options
 - **hostname** - The hostname that was requested.
 - **queue** - Optional - the name of the Resque queue to use.
 - **secure** - Optional - Boolean that allows you to define if you want to hit the secure Airbrake endpoint.
+
+Filters
+=======
+
+You can add filters to the request data that will be sent to your Airbrake server by calling the addFilter or addFilters methods. The default is to define a filter via the form name attribute. For example, if you had a form like this:
+
+```xhtml
+<form method="post" action="/login">
+  <label for="username">Username</label>
+  <input id="username" name="user[email]" type="text" />
+  
+  <label for="password">Password</label>
+  <input id="password" name="user[password]" type="password" />
+</form>
+```
+
+You could filter out all of the user details with the code:
+
+```php
+<?php
+
+$config = Aibrake\EventHandler::getClient()->getConfiguration();
+$config->addFilter('user');
+```
+
+Or just the password by using the filter
+
+```php
+<?php
+
+$config = Aibrake\EventHandler::getClient()->getConfiguration();
+$config->addFilter('user[password]');
+```
+
+You can also define your own filter classes by implementing the
+Airbrake\Filter\FilterInterface interface. 
+
+```php
+<?php
+
+class MyFilter implements Airbrake\Filter\FilterInterface
+{
+  public function filter(&$post_data)
+  {
+    if (array_key_exists('some_key', $post_data)){
+      unset($post_data['some_key']);
+    }
+  }
+}
+$config = Aibrake\EventHandler::getClient()->getConfiguration();
+$config->addFilter(new MyFilter());
+```
