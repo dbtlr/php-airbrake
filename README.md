@@ -1,7 +1,9 @@
 PHP Airbrake
 ============
 
-A PHP module to make use of the [Airbrake API](http://help.airbrake.io/kb/api-2/api-overview) for storing error messages. This is based loosely on the [official Ruby implementation](https://github.com/airbrake/airbrake) from the Airbrake team.
+[![Build Status](https://travis-ci.org/dbtlr/php-airbrake.svg)](https://travis-ci.org/dbtlr/php-airbrake)
+
+A PHP module to make use of the [Airbrake API](http://help.airbrake.io/kb/api-2/api-overview) for storing error messages.
 
 Installation
 ============
@@ -194,13 +196,13 @@ You simply need 2 commands to verify things are working as expected.
 
 1) PHPUnit
 
-```
+``` bash
 vendor/bin/phpunit
 ```
 
 2) PHPCS
 
-```
+``` bash
 vendor/bin/phpcs --standard=PSR2 src
 ```
 
