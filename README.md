@@ -175,3 +175,33 @@ class MyExceptionFilter implements Airbrake\EventFilter\Exception\FilterInterfac
 $airbrake = Airbrake\EventHandler::start();
 $airbrake->addExceptionFilter(new MyExceptionFilter());
 ```
+
+
+Contributing
+============
+
+A few things to note, if you want to add features. First off, I love pull requests. If you have a feature that you wish this had, please feel free to add it and submit it to me. I'll try to be as responsive as possible.
+
+Somethings to know:
+
+- Please maintain the PSR-2 coding standard. For reference as to what this is, [check the PSR-2 standard page](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-2-coding-style-guide.md).
+- This plugin should maintain compatibility with PHP 5.3+. I know, PHP 5.3 is end of life, however many people are still forced to use it regardless.
+- Travis runs automatically for pull requests, if travis doesn't pass, then I won't merge.
+
+#### How to check
+
+You simply need 2 commands to verify things are working as expected.
+
+1) PHPUnit
+
+```
+vendor/bin/phpunit
+```
+
+2) PHPCS
+
+```
+vendor/bin/phpcs --standard=PSR2 src
+```
+
+As long as these pass, you should be golden. The one catch is that Travis will check multiple versions of PHP, so if you use syntax specific to PHP 5.4+, then you may see a failure.
