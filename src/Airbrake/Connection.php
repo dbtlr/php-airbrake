@@ -9,7 +9,7 @@ namespace Airbrake;
  * @copyright  (c) 2011-2013 Drew Butler
  * @license    http://www.opensource.org/licenses/mit-license.php
  */
-class Connection
+class Connection implements Connection\ConnectionInterface
 {
     protected $configuration = null;
     protected $headers = array();
@@ -43,7 +43,7 @@ class Connection
      * @param Airbrake\Notice $notice
      * @return string
      **/
-    public function send(Notice $notice)
+    public function send(\Airbrake\Notice $notice)
     {
         $curl = curl_init();
 

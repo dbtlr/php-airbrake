@@ -30,6 +30,18 @@ class Client
         $this->configuration = $configuration;
         $this->connection    = new Connection($configuration);
     }
+
+    /**
+     * Override the default Connection
+     *
+     * @throws Airbrake\Exception
+     * @param Configuration $configuration
+     */
+    public function setConnection($connection)
+    {
+        $this->connection = $connection;
+        return $this;
+    }
     
     /**
      * @return Configuration
