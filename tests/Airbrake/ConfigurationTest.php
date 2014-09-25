@@ -23,7 +23,7 @@ class ConfigurationTest extends \PHPUnit_Framework_TestCase
         $initial = array('foo' => 1, 'bar' => 2);
         $expected = array('foo' => 1, 'bar' => 2);
 
-        $config = new Configuration('test', ['postData' => $initial]);
+        $config = new Configuration('test', array('postData' => $initial));
         $config->addFilter('bar');
         $this->assertEquals($expected, $config->getUnfilteredParameters());
     }

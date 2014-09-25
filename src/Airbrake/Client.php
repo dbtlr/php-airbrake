@@ -2,6 +2,7 @@
 namespace Airbrake;
 
 use Exception;
+use Airbrake\Connection\ConnectionInterface;
 
 /**
  * Airbrake client class.
@@ -40,10 +41,10 @@ class Client
      * Override the default Connection
      *
      * @throws Exception
-     * @param Connection $connection
+     * @param ConnectionInterface $connection
      * @return self
      */
-    public function setConnection(Connection $connection)
+    public function setConnection(ConnectionInterface $connection)
     {
         $this->connection = $connection;
         return $this;
