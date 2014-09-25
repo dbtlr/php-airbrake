@@ -105,6 +105,7 @@ Configuration Options
 - **hostname** - The hostname that was requested.
 - **queue** - Optional - the name of the Resque queue to use.
 - **secure** - Optional - Boolean that allows you to define if you want to hit the secure Airbrake endpoint.
+- **errorReportingLevel** - Optional - functions the same way as the error_reporting php.ini setting (this is applied on top of show warnings parameter on the EventHandler::start method)
 
 Filters
 =======
@@ -156,4 +157,43 @@ class MyFilter implements Airbrake\Filter\FilterInterface
 }
 $config = Aibrake\EventHandler::getClient()->getConfiguration();
 $config->addFilter(new MyFilter());
+```
+
+Error/Exception Filters
+=============
+You can also define your own filters for filtering PHP Errors. If, for example, you want to have strict warnings on, but have some legacy subsystem that generates a lot of strict warnings, you can do the following:
+
+```php
+<?php
+
+class MyErrorFilter implements Airbrake\EventFilter\Error\FilterInterface
+{
+  public function shouldSendError($type, $message, $file, $line, $context = null)
+  {
+    if ($type == E_STRICT && preg_match('/LegacyController.php/', $file)){
+      return false;
+    }
+  }
+}
+
+$airbrake = Airbrake\EventHandler::start();
+$airbrake->addErrorFilter(new MyErrorFilter());
+
+```
+
+You can do the same thing for uncaught exceptions - say your project throws ACL exceptions that bubble up to Airbrake, you can filter them out like this:
+
+```php
+<?php
+
+class MyExceptionFilter implements Airbrake\EventFilter\Exception\FilterInterface
+{
+  public function shouldSendException($exception)
+  {
+    return !($exception instanceof AclException);
+  }
+}
+
+$airbrake = Airbrake\EventHandler::start();
+$airbrake->addExceptionFilter(new MyExceptionFilter());
 ```
