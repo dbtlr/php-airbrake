@@ -9,7 +9,7 @@ Installation
 The best way to install the library is by using [Composer](http://getcomposer.org). Add the following to `composer.json` in the root of your project:
 
 ``` javascript
-{ 
+{
   "require": {
     "dbtlr/php-airbrake": "dev-master"
   }
@@ -67,27 +67,6 @@ try {
 
 The options array may be filled with data from the Configuration Options section, if you would like to override some of the default options. Otherwise, it can be ignored.
 
-Using Resque
-============
-
-_This section assumes you are using the [PHP-Resque](https://github.com/chrisboulton/php-resque) project from [Chris Boulton](https://github.com/chrisboulton)._
-
-In order to speed up polling time, it may be desirable to pair Airbrake with a Resque queue. In order to do this, you must simply include Resque in your project and pass in the queue option.
-
-```php
-<?php
-require_once 'vendor/autoload.php';
-
-Airbrake\EventHandler::start('[your api key]', true, array('queue' => 'airbrake'));
-```
-
-In order to start the requested queue, simply run this command.
-
-```
-QUEUE=airbrake APP_INCLUDE=vendor/autoload.php vendor/bin/resque
-```
-
-This will start the queue running properly.
 
 Configuration Options
 =====================
@@ -103,7 +82,6 @@ Configuration Options
 - **projectRoot** - Defaults to the Document Root. May need to change based on the context of your application.
 - **url** - The main URL that was requested.
 - **hostname** - The hostname that was requested.
-- **queue** - Optional - the name of the Resque queue to use.
 - **secure** - Optional - Boolean that allows you to define if you want to hit the secure Airbrake endpoint.
 - **errorReportingLevel** - Optional - functions the same way as the error_reporting php.ini setting (this is applied on top of show warnings parameter on the EventHandler::start method)
 
@@ -116,7 +94,7 @@ You can add filters to the request data that will be sent to your Airbrake serve
 <form method="post" action="/login">
   <label for="username">Username</label>
   <input id="username" name="user[email]" type="text" />
-  
+
   <label for="password">Password</label>
   <input id="password" name="user[password]" type="password" />
 </form>
@@ -141,7 +119,7 @@ $config->addFilter('user[password]');
 ```
 
 You can also define your own filter classes by implementing the
-Airbrake\Filter\FilterInterface interface. 
+Airbrake\Filter\FilterInterface interface.
 
 ```php
 <?php

@@ -11,8 +11,8 @@ namespace Airbrake;
  */
 class Version
 {
-    const NAME    = 'nodrew-php-airbrake';
+    const NAME    = 'dbtlr-php-airbrake';
     const NUMBER  = '1.0';
-    const APP_URL = 'https://github.com/nodrew/php-airbrake';
+    const APP_URL = 'https://github.com/dbtlr/php-airbrake';
     const API     = '2.0';
 }

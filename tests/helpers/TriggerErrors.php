@@ -1,5 +1,7 @@
 <?php
 
+namespace Airbrake\Helper;
+
 /**
  * PHP's trigger_error function only allows you to trigger errors with in
  * the E_USER_* levels - no one cares about these. Below are some methods
@@ -50,7 +52,7 @@ class TriggerErrors
   }
   public function triggerCoreWarning()
   {
-    //This doesn't work - the "on startup" bit of the error type makes me think 
+    //This doesn't work - the "on startup" bit of the error type makes me think
     //it will be impossible to implement this
     dl('asfasdasdfasdfasdfasdfasdff.so');
   }

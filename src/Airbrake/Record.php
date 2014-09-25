@@ -1,7 +1,9 @@
 <?php
 namespace Airbrake;
 
-use ArrayAccess, IteratorAggregate, ArrayIterator;
+use ArrayAccess;
+use IteratorAggregate;
+use ArrayIterator;
 
 /**
  * A record abstract that can help accelerate building models.
@@ -43,7 +45,7 @@ abstract class Record implements ArrayAccess, IteratorAggregate
     /**
      * Load the given data array to the record.
      *
-     * @param array|stdClass $data
+     * @param array|\stdClass $data
      */
     public function __construct($data = array())
     {
@@ -106,13 +108,13 @@ abstract class Record implements ArrayAccess, IteratorAggregate
      */
     public function __set($key, $value)
     {
-        return $this->set($key, $value);
+        $this->set($key, $value);
     }
 
     /**
      * Load the given data array to the record.
      *
-     * @param array|stdClass $data
+     * @param array|\stdClass $data
      */
     public function load($data)
     {
@@ -191,7 +193,7 @@ abstract class Record implements ArrayAccess, IteratorAggregate
      *
      * Part of the ArrayAccess interface.
      *
-     * @return string $key
+     * @param string $key
      * @return bool
      */
     public function offsetExists($key)
@@ -231,11 +233,14 @@ abstract class Record implements ArrayAccess, IteratorAggregate
      */
     public function getIterator()
     {
-        return new ArrayIterator($this->dump());
+        return new ArrayIterator($this->toArray());
     }
 
     /**
      * Optional method to declare that will initialize the data on construct.
      */
-    protected function initialize() {}
+    protected function initialize()
+    {
+
+    }
 }

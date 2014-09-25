@@ -17,7 +17,7 @@ class Connection implements Connection\ConnectionInterface
     /**
      * Build the object with the airbrake Configuration.
      *
-     * @param Airbrake\Configuration $configuration
+     * @param Configuration $configuration
      */
     public function __construct(Configuration $configuration)
     {
@@ -32,27 +32,27 @@ class Connection implements Connection\ConnectionInterface
     /**
      * Add a header to the connection.
      *
-     * @param string header
+     * @param string $header
      */
     public function addHeader($header)
     {
-        $this->headers += (array)$header;
+        $this->headers += (array) $header;
     }
 
     /**
-     * @param Airbrake\Notice $notice
+     * @param Notice $notice
      * @return string
      **/
-    public function send(\Airbrake\Notice $notice)
+    public function send(Notice $notice)
     {
         $curl = curl_init();
 
         $xml = $notice->toXml($this->configuration);
 
-        curl_setopt($curl, CURLOPT_URL, $this->configuration->apiEndPoint);
+        curl_setopt($curl, CURLOPT_URL, $this->configuration->get('apiEndPoint'));
         curl_setopt($curl, CURLOPT_POST, 1);
         curl_setopt($curl, CURLOPT_HEADER, 0);
-        curl_setopt($curl, CURLOPT_TIMEOUT, $this->configuration->timeout);
+        curl_setopt($curl, CURLOPT_TIMEOUT, $this->configuration->get('timeout'));
         curl_setopt($curl, CURLOPT_POSTFIELDS, $xml);
         curl_setopt($curl, CURLOPT_HTTPHEADER, $this->headers);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);

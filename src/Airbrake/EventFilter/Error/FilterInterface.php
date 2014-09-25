@@ -3,8 +3,8 @@
 namespace Airbrake\EventFilter\Error;
 
 /**
- * Interface for Airbrake error filters. These are used to filter out native PHP 
- * errors. If you want to filter uncaught exceptions, please see 
+ * Interface for Airbrake error filters. These are used to filter out native PHP
+ * errors. If you want to filter uncaught exceptions, please see
  * Airbrake\EventFilter\Exception\FilterInterface instead
  *
  * @package    Airbrake
@@ -14,17 +14,15 @@ namespace Airbrake\EventFilter\Error;
  */
 interface FilterInterface
 {
-  /**
-   * Filters out PHP errors before they get sent
-   *
-   * @param int $type
-   * @param string $message
-   * @param string $file
-   * @param int $line
-   * @param array $context
-   * @see http://us3.php.net/manual/en/function.set-error-handler.php
-   * @return bool
-   */
-  public function shouldSendError($type, $message, $file = null, $line = null,
-      $context = null);
+    /**
+     * Filters out PHP errors before they get sent
+     *
+     * @param int $type
+     * @param string $message
+     * @param string $file
+     * @param int $line
+     * @param array $context
+     * @return bool
+     */
+    public function shouldSendError($type, $message, $file = null, $line = null, $context = null);
 }

@@ -36,7 +36,7 @@ class Notice extends Record
     /**
      * Convert the notice to xml
      *
-     * @param Airbrake\Configuration $configuration
+     * @param Configuration $configuration
      * @return string
      */
     public function toXml(Configuration $configuration)
@@ -55,12 +55,14 @@ class Notice extends Record
         $env->addChild('environment-name', $configuration->get('environmentName'));
 
         $error = $doc->addChild('error');
-        $error->addChild('class', $this->errorClass);
-        $error->addChild('message', htmlspecialchars($this->errorMessage));
+        $error->addChild('class', $this->get('errorClass'));
+        $error->addChild('message', htmlspecialchars($this->get('errorMessage')));
 
-        if (count($this->backtrace) > 0) {
+        $trace = $this->get('backtrace');
+
+        if (count($trace) > 0) {
             $backtrace = $error->addChild('backtrace');
-            foreach ($this->backtrace as $entry) {
+            foreach ($trace as $entry) {
                 $method = isset($entry['class']) ? $entry['class'].'::' : '';
                 $method .= isset($entry['function']) ? $entry['function'] : '';
                 $line = $backtrace->addChild('line');
@@ -75,7 +77,10 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), array('airbrake_extra' => $this->extraParameters)));
+        $extras = $this->get('extraParameters');
+        $params = array_merge($configuration->getParameters(), array('airbrake_extra' => $extras));
+
+        $this->array2Node($request, 'params', $params);
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 
