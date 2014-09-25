@@ -2,6 +2,9 @@
 namespace Airbrake;
 
 use Exception;
+use Airbrake\EventFilter\Error\ErrorReporting as ErrorReporting;
+use Airbrake\EventFilter\Error\NotifyOnWarning as NotifyOnWarning;
+use Airbrake\EventFilter\Exception\AirbrakeExceptionFilter as AirbrakeExceptionFilter;
 
 /**
  * Airbrake EventHandler class.
@@ -19,6 +22,9 @@ class EventHandler
     protected static $instance = null;
     protected $airbrakeClient  = null;
     protected $notifyOnWarning = null;
+
+    protected $onErrorFilters = array();
+    protected $onExceptionFilters = array();
 
     protected $warningErrors = array(\E_NOTICE            => 'Notice',
                                      \E_STRICT            => 'Strict',
@@ -42,9 +48,11 @@ class EventHandler
      *
      * @param Airbrake\Client $client
      */
-    public function __construct(Client $client, $notifyOnWarning)
+    public function __construct(Client $client, $notifyOnWarning = false)
     {
-        $this->notifyOnWarning = $notifyOnWarning;
+        if (!$notifyOnWarning){
+            $this->addErrorFilter(new NotifyOnWarning());
+        }
         $this->airbrakeClient = $client;
     }
 
@@ -80,6 +88,12 @@ class EventHandler
             $client = new Client($config);
             self::$instance = new self($client, $notifyOnWarning);
 
+            if (null !== $config->errorReportingLevel){
+                self::$instance->addErrorFilter(new ErrorReporting($config));
+            }
+
+            self::$instance->addExceptionFilter(new AirbrakeExceptionFilter());
+
             set_error_handler(array(self::$instance, 'onError'));
             set_exception_handler(array(self::$instance, 'onException'));
             register_shutdown_function(array(self::$instance, 'onShutdown'));
@@ -88,6 +102,31 @@ class EventHandler
         return self::$instance;
     }
 
+    /**
+     * Add an error filter that is applied to any errors before posting them 
+     * to your airbrake server.
+     * @see http://us3.php.net/manual/en/function.set-error-handler.php
+     * @param Airbrake\EventFilter\Error\FilterInterface $filter
+     * @return EventHandler
+     */
+    public function addErrorFilter(EventFilter\Error\FilterInterface $filter)
+    {
+        $this->onErrorFilters[] = $filter;
+        return $this;
+    }
+
+    /**
+     * Add an error filter that is applied to any exceptions before posting them 
+     * to your airbrake server.
+     * @see http://us3.php.net/manual/en/function.set-exception-handler.php
+     * @param Airbrake\EventFilter\Exception\FilterInterface $filter
+     * @return EventHandler
+     */
+    public function addExceptionFilter(EventFilter\Exception\FilterInterface $filter)
+    {
+        $this->onExceptionFilters[] = $filter;
+        return $this;
+    }
 
     /**
      * Revert the handlers back to their original state.
@@ -124,7 +163,7 @@ class EventHandler
             throw new Exception($message);
         }
 
-        if ($this->notifyOnWarning && isset ($this->warningErrors[$type])) {
+        if ($this->shouldNotifyError($type, $message, $file, $line, $context)) {
             // Make sure we pass in the current backtrace, minus this function call.
             $backtrace = debug_backtrace();
             array_shift($backtrace);
@@ -136,6 +175,25 @@ class EventHandler
         return true;
     }
 
+    private function shouldNotifyError($type, $message, $file, $line, $context = null)
+    {
+        foreach($this->onErrorFilters as $f){
+            if (!$f->shouldSendError($type, $message, $file, $line, $context)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private function shouldNotifyException($exception)
+    {
+        foreach($this->onExceptionFilters as $f){
+            if (!$f->shouldSendException($exception) ){
+                return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * Catches uncaught exceptions.
@@ -146,7 +204,9 @@ class EventHandler
      */
     public function onException(Exception $exception)
     {
-        $this->airbrakeClient->notifyOnException($exception);
+        if ($this->shouldNotifyException($exception)) {
+            $this->airbrakeClient->notifyOnException($exception);
+        }
 
         return true;
     }
@@ -176,7 +236,8 @@ class EventHandler
         }
 
         // Don't notify on warning if not configured to.
-        if (!$this->notifyOnWarning && isset($this->warningErrors[$error['type']])) {
+        if (!$this->shouldNotifyError($error['type'], $error['message'], 
+          $error['file'], $error['line'])){
             return;
         }
 
