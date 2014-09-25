@@ -13,25 +13,13 @@ use SimpleXMLElement;
  */
 class Notice extends Record
 {
-    /**
-     * The backtrace from the given exception or hash.
-     */
-    protected $_backtrace = null;
-
-    /**
-     * The name of the class of error (such as RuntimeError)
-     */
-    protected $_errorClass = null;
-
-    /**
-     * The message from the exception, or a general description of the error
-     */
-    protected $_errorMessage = null;
-
-    /**
-     * Extra parameters to send to Airbrake
-     */
-    protected $_extraParameters = array();
+    /** @var array */
+    protected $dataStore = array(
+        'backtrace' => null,
+        'errorClass' => null,
+        'errorMessage' => null,
+        'extraParameters' => null,
+    );
 
     /**
      * Convert the notice to xml

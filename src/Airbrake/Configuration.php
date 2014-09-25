@@ -15,25 +15,29 @@ use Airbrake\Exception as AirbrakeException;
  */
 class Configuration extends Record
 {
-    protected $_apiKey;
-    protected $_timeout = 2;
-    protected $_environmentName = 'production';
-    protected $_serverData;
-    protected $_getData;
-    protected $_postData;
-    protected $_sessionData;
-    protected $_component;
-    protected $_action;
-    protected $_projectRoot;
-    protected $_url;
-    protected $_hostname;
-    protected $_secure = false;
-    protected $_host = 'api.airbrake.io';
-    protected $_resource = '/notifier_api/v2/notices';
-    protected $_apiEndPoint;
-    protected $_errorReportingLevel;
+    /** @var array  */
+    protected $dataStore = array(
+        'apiKey' => null,
+        'timeout' => null,
+        'environmentName' => 'production',
+        'serverData' => null,
+        'getData' => null,
+        'postData' => null,
+        'sessionData' => null,
+        'component' => null,
+        'action' => null,
+        'projectRoot' => null,
+        'url' => null,
+        'hostname' => null,
+        'secure' => false,
+        'host' => 'api.airbrake.io',
+        'resource' => '/notifier_api/v2/notices',
+        'apiEndPoint' => null,
+        'errorReportingLevel' => null,
+    );
 
-    protected $_parameterFilters = array();
+    /** @var array */
+    protected $parameterFilters = array();
 
     /**
      * Load the given data array to the record.
@@ -104,7 +108,7 @@ class Configuration extends Record
     public function getParameters()
     {
         $parameters = $this->getUnfilteredParameters();
-        foreach ($this->get('parameterFilters') as $filter) {
+        foreach ($this->parameterFilters as $filter) {
             /** @var \Airbrake\Filter\FilterInterface $filter */
             $filter->filter($parameters);
         }
@@ -141,7 +145,7 @@ class Configuration extends Record
             $keyName = new Filter($keyName);
         }
 
-        $this->_parameterFilters[] = $keyName;
+        $this->parameterFilters[] = $keyName;
         return $this;
     }
 
@@ -161,6 +165,7 @@ class Configuration extends Record
     public function addFilters($keyNames)
     {
         array_map(array($this, 'addFilter'), $keyNames);
+
         return $this;
     }
 
@@ -171,7 +176,8 @@ class Configuration extends Record
      */
     public function clearFilters()
     {
-        $this->_parameterFilters = array();
+        $this->parameterFilters = array();
+
         return $this;
     }
 
