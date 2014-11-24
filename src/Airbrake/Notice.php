@@ -68,7 +68,15 @@ class Notice extends Record
         $request->addChild('action', $configuration->get('action'));
 
         $extras = $this->get('extraParameters');
-        $innerExtras = array_merge($configuration->get('extraParameters'), $extras);
+        $configExtras = $configuration->get('extraParameters');
+
+        if (!isset($extras))
+            $extras = array();
+        if (!isset($configExtras))
+            $configExtras = array();
+
+        $innerExtras = array_merge($extras, $configExtras);
+
         $params = array_merge($configuration->getParameters(), array('airbrake_extra' => $innerExtras));
 
         $this->array2Node($request, 'params', $params);
@@ -99,7 +107,7 @@ class Notice extends Record
 
             // htmlspecialchars() is needed to prevent html characters from breaking the node.
             $node->addChild('var', htmlspecialchars($value))
-                 ->addAttribute('key', $key);
+                ->addAttribute('key', $key);
         }
     }
 }

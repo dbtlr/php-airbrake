@@ -35,7 +35,7 @@ class Configuration extends Record
         'resource' => '/notifier_api/v2/notices',
         'apiEndPoint' => null,
         'errorReportingLevel' => null,
-        'extraParams' => null,
+        'extraParameters' => null,
     );
 
     /** @var array */
