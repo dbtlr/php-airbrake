@@ -34,6 +34,7 @@ class Configuration extends Record
     protected $_apiEndPoint;
     protected $_errorReportingLevel;
     protected $_extraParameters = array();
+    protected $_autoloadResque = true;
 
     protected $_parameterFilters = array();
 
