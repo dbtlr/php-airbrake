@@ -75,7 +75,7 @@ class Notice extends Record
         $request->addChild('component', $configuration->get('component'));
         $request->addChild('action', $configuration->get('action'));
 
-        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), array('airbrake_extra' => $this->extraParameters)));
+        $this->array2Node($request, 'params', array_merge($configuration->getParameters(), array('airbrake_extra' => $this->_extraParameters)));
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
         $this->array2Node($request, 'cgi-data', $configuration->get('serverData'));
 
@@ -103,7 +103,7 @@ class Notice extends Record
 
             // htmlspecialchars() is needed to prevent html characters from breaking the node.
             $node->addChild('var', htmlspecialchars($value))
-                 ->addAttribute('key', $key);
+                ->addAttribute('key', $key);
         }
     }
 }
