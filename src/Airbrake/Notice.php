@@ -41,6 +41,8 @@ class Notice extends Record
         $env = $doc->addChild('server-environment');
         $env->addChild('project-root', $configuration->get('projectRoot'));
         $env->addChild('environment-name', $configuration->get('environmentName'));
+        $env->addChild('hostname', $configuration->get('hostname'));
+        $env->addChild('app_version', $configuration->get('appVersion'));
 
         $error = $doc->addChild('error');
         $error->addChild('class', $this->get('errorClass'));
@@ -66,7 +68,8 @@ class Notice extends Record
         $request->addChild('action', $configuration->get('action'));
 
         $extras = $this->get('extraParameters');
-        $params = array_merge($configuration->getParameters(), array('airbrake_extra' => $extras));
+        $innerExtras = array_merge($configuration->get('extraParameters'), $extras);
+        $params = array_merge($configuration->getParameters(), array('airbrake_extra' => $innerExtras));
 
         $this->array2Node($request, 'params', $params);
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
