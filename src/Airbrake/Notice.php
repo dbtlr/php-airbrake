@@ -70,10 +70,12 @@ class Notice extends Record
         $extras = $this->get('extraParameters');
         $configExtras = $configuration->get('extraParameters');
 
-        if (!isset($extras))
+        if (!isset($extras)) {
             $extras = array();
-        if (!isset($configExtras))
+        }
+        if (!isset($configExtras)) {
             $configExtras = array();
+        }
 
         $innerExtras = array_merge($extras, $configExtras);
 
