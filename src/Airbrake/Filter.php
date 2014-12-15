@@ -38,7 +38,8 @@ class Filter implements Filter\FilterInterface
     public function filter(&$array)
     {
         $current = &$array;
-        $last_element = end(array_keys($this->key_parts));
+        $kp_keys = array_keys($this->key_parts);
+        $last_element = end($kp_keys);
 
         /**
          * This code is ugly and complicated because PHP has no way of unsetting 
