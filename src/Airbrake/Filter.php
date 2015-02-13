@@ -39,6 +39,7 @@ class Filter implements Filter\FilterInterface
     public function filter(&$array)
     {
         $current = &$array;
+
         $keys = array_keys($this->keyParts);
         $lastElement = end($keys);
 
@@ -66,6 +67,7 @@ class Filter implements Filter\FilterInterface
                 unset($current[$keyPart]);
                 break;
             }
+
             $current = &$current[$keyPart];
         }
     }
@@ -73,7 +75,7 @@ class Filter implements Filter\FilterInterface
     /**
      * @param string $keyName
      */
-    private function splitKeyName($keyName)
+    protected function splitKeyName($keyName)
     {
         /**
          * This breaks a form name formatted post name into it's constituent
