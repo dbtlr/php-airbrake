@@ -77,7 +77,6 @@ class Configuration extends Record
         $serverData = $this->get('serverData');
 
         if (!$this->get('projectRoot')) {
-
             $projectRoot = isset($serverData['_']) ? $serverData['_'] : $serverData['DOCUMENT_ROOT'];
             $this->set('projectRoot', $projectRoot);
         }
