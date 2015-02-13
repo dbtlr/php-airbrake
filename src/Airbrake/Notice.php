@@ -41,6 +41,8 @@ class Notice extends Record
         $env = $doc->addChild('server-environment');
         $env->addChild('project-root', $configuration->get('projectRoot'));
         $env->addChild('environment-name', $configuration->get('environmentName'));
+        $env->addChild('hostname', $configuration->get('hostname'));
+        $env->addChild('app_version', $configuration->get('appVersion'));
 
         $error = $doc->addChild('error');
         $error->addChild('class', $this->get('errorClass'));
@@ -66,7 +68,18 @@ class Notice extends Record
         $request->addChild('action', $configuration->get('action'));
 
         $extras = $this->get('extraParameters');
-        $params = array_merge($configuration->getParameters(), array('airbrake_extra' => $extras));
+        $configExtras = $configuration->get('extraParameters');
+
+        if (!isset($extras)) {
+            $extras = array();
+        }
+        if (!isset($configExtras)) {
+            $configExtras = array();
+        }
+
+        $innerExtras = array_merge($extras, $configExtras);
+
+        $params = array_merge($configuration->getParameters(), array('airbrake_extra' => $innerExtras));
 
         $this->array2Node($request, 'params', $params);
         $this->array2Node($request, 'session', $configuration->get('sessionData'));
@@ -96,7 +109,7 @@ class Notice extends Record
 
             // htmlspecialchars() is needed to prevent html characters from breaking the node.
             $node->addChild('var', htmlspecialchars($value))
-                 ->addAttribute('key', $key);
+                ->addAttribute('key', $key);
         }
     }
 }

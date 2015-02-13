@@ -29,11 +29,13 @@ class Configuration extends Record
         'projectRoot' => null,
         'url' => null,
         'hostname' => null,
+        'appVersion' => null,
         'secure' => false,
         'host' => 'api.airbrake.io',
         'resource' => '/notifier_api/v2/notices',
         'apiEndPoint' => null,
         'errorReportingLevel' => null,
+        'extraParameters' => null,
     );
 
     /** @var array */

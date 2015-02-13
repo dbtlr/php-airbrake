@@ -63,9 +63,10 @@ class Client
      *
      * @param string $message
      * @param array $backtrace
+     * @param null $extraParams
      * @return string
      */
-    public function notifyOnError($message, array $backtrace = null)
+    public function notifyOnError($message, array $backtrace = null, $extraParams = null)
     {
         if (!$backtrace) {
             $backtrace = debug_backtrace();
@@ -79,6 +80,7 @@ class Client
             'errorClass'   => 'PHP Error',
             'backtrace'    => $backtrace,
             'errorMessage' => $message,
+            'extraParams'  => $extraParams,
         ));
 
         return $this->notify($notice);
@@ -88,15 +90,17 @@ class Client
      * Notify on an exception
      *
      * @param Exception $exception
+     * @param null $extraParams
      * @return string
      */
-    public function notifyOnException(Exception $exception)
+    public function notifyOnException(Exception $exception, $extraParams = null)
     {
         $notice = new Notice;
         $notice->load(array(
             'errorClass'   => get_class($exception),
             'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
             'errorMessage' => $exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine(),
+            'extraParams'  => $extraParams,
         ));
 
         return $this->notify($notice);
