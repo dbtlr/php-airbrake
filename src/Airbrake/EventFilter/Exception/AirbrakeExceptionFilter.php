@@ -2,8 +2,10 @@
 
 namespace Airbrake\EventFilter\Exception;
 
+use Airbrake\Exception as AirbrakeException;
+
 /**
- * Filters out Airbrake's internal exceptions so they aren't sent via Airbrake 
+ * Filters out Airbrake's internal exceptions so they aren't sent via Airbrake
  * (an exception thrown in the exception handler could be a bad thing)
  *
  * @package    Airbrake
@@ -13,15 +15,14 @@ namespace Airbrake\EventFilter\Exception;
  */
 class AirbrakeExceptionFilter implements FilterInterface
 {
-  /**
-   * Filters out uncaught exceptions before they get sent.
-   *
-   * @param Exception $exception
-   * @see http://us3.php.net/manual/en/function.set-exception-handler.php
-   * @return bool
-   */
-  public function shouldSendException(\Exception $e)
-  {
-    return !($e instanceof Airbrake\Exception);
-  }
+    /**
+     * Filters out uncaught exceptions before they get sent.
+     *
+     * @param \Exception $exception
+     * @return bool
+     */
+    public function shouldSendException(\Exception $exception)
+    {
+        return !($exception instanceof AirbrakeException);
+    }
 }

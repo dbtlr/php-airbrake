@@ -4,7 +4,7 @@ namespace Airbrake\EventFilter\Exception;
 
 /**
  * Interface for Airbrake exception filters. These are used to filter out
- * uncaught exceptions. If you want to filter native PHP errors, please see 
+ * uncaught exceptions. If you want to filter native PHP errors, please see
  * Airbrake\EventFilter\Error\FilterInterface instead
  *
  * @package    Airbrake
@@ -14,5 +14,9 @@ namespace Airbrake\EventFilter\Exception;
  */
 interface FilterInterface
 {
-  public function shouldSendException(\Exception $ex);
+    /**
+     * @param \Exception $exception
+     * @return mixed
+     */
+    public function shouldSendException(\Exception $exception);
 }

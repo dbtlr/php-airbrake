@@ -1,13 +1,27 @@
 <?php
 
-class CustomFilter implements Airbrake\Filter\FilterInterface
+namespace Airbrake\Stub;
+
+use Airbrake\Filter\FilterInterface;
+
+class CustomFilter implements FilterInterface
 {
-  public function __construct($key_to_filter)
-  {
-    $this->key_to_filter = $key_to_filter;
-  }
-  public function filter(&$array)
-  {
-    unset($array[$this->key_to_filter]);
-  }
+    /** @var string  */
+    protected $keyToFilter;
+
+    /**
+     * @param string $key
+     */
+    public function __construct($key)
+    {
+        $this->keyToFilter = $key;
+    }
+
+    /**
+     * @param array $array
+     */
+    public function filter(&$array)
+    {
+        unset($array[$this->keyToFilter]);
+    }
 }

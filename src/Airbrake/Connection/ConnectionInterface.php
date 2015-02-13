@@ -1,9 +1,11 @@
 <?php
 namespace Airbrake\Connection;
 
+use Airbrake\Notice;
+
 /**
- * Airbrake connection Interface. Make a class implement this and pass it into 
- * the Airbrake\Client::setConnection() method to add a custom method of sending 
+ * Airbrake connection Interface. Make a class implement this and pass it into
+ * the Airbrake\Client::setConnection() method to add a custom method of sending
  * Airbrake notices.
  *
  * @package    Airbrake
@@ -14,11 +16,11 @@ namespace Airbrake\Connection;
 
 interface ConnectionInterface
 {
-  /**
-   * Handles a notice being sent.
-   *
-   * @param Airbrake\Notice $notice
-   * @return boolean success
-   */
-  public function send(\Airbrake\Notice $notice);
+    /**
+     * Handles a notice being sent.
+     *
+     * @param Notice $notice
+     * @return boolean success
+     */
+    public function send(Notice $notice);
 }

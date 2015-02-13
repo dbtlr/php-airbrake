@@ -1,0 +1,28 @@
+<phpunit
+        backupGlobals="false"
+        backupStaticAttributes="false"
+        bootstrap="vendor/autoload.php"
+        cacheTokens="false"
+        colors="false"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+        forceCoversAnnotation="false"
+        mapTestClassNameToCoveredClassName="false"
+        processIsolation="false"
+        stopOnError="false"
+        stopOnFailure="false"
+        stopOnIncomplete="false"
+        stopOnSkipped="false"
+        timeoutForSmallTests="1"
+        timeoutForMediumTests="10"
+        timeoutForLargeTests="60"
+        strict="false"
+        verbose="false">
+
+  <testsuites>
+    <testsuite name="All">
+      <directory suffix="Test.php">./tests</directory>
+    </testsuite>
+  </testsuites>
+</phpunit>
