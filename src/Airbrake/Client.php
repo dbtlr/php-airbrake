@@ -80,7 +80,7 @@ class Client
             'errorClass'   => 'PHP::Error',
             'backtrace'    => $backtrace,
             'errorMessage' => $message,
-            'extraParams'  => $extraParams,
+            'extraParameters'  => $extraParams,
         ));
 
         return $this->notify($notice);
@@ -97,10 +97,10 @@ class Client
     {
         $notice = new Notice;
         $notice->load(array(
-            'errorClass'   => get_class($exception),
-            'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
-            'errorMessage' => $exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine(),
-            'extraParams'  => $extraParams,
+            'errorClass'       => get_class($exception),
+            'backtrace'        => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
+            'errorMessage'     => $exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine(),
+            'extraParameters'  => $extraParams,
         ));
 
         return $this->notify($notice);
