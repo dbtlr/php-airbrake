@@ -2,6 +2,7 @@ PHP Airbrake
 ============
 
 [![Build Status](https://travis-ci.org/dbtlr/php-airbrake.svg)](https://travis-ci.org/dbtlr/php-airbrake)
+[![HHVM Status](http://hhvm.h4cc.de/badge/dbtlr/php-airbrake.svg)](http://hhvm.h4cc.de/package/dbtlr/php-airbrake)
 
 A PHP module to make use of the [Airbrake API](http://help.airbrake.io/kb/api-2/api-overview) for storing error messages.
 
