@@ -43,17 +43,23 @@ class TriggerErrorsTest extends \PHPUnit_Framework_TestCase
 
     public function testMethodsProvider()
     {
-        return array(
-            array(E_STRICT, 'triggerStrict'),
+        $data = array(
             array(E_NOTICE, 'triggerNotice'),
             array(E_WARNING, 'triggerWarning'),
             array(E_USER_WARNING, 'triggerUserWarning'),
             array(E_USER_NOTICE, 'triggerUserNotice'),
-            array(E_DEPRECATED, 'triggerDeprecated'),
             //The triggers for these two don't works, unfortunately
             //array(E_COMPILE_WARNING, 'triggerCompileWarning'),
             //array(E_CORE_WARNING, 'triggerCoreWarning'),
             array(E_RECOVERABLE_ERROR, 'triggerRecoverableError'),
         );
+
+        if (!defined('HHVM_VERSION')) {
+            // HHVM can not trigger these errors for testing purposes.
+            $data[] = array(E_STRICT, 'triggerStrict');
+            $data[] = array(E_DEPRECATED, 'triggerDeprecated');
+        }
+
+        return $data;
     }
 }
