@@ -77,7 +77,7 @@ class Client
 
         $notice = new Notice;
         $notice->load(array(
-            'errorClass'   => 'PHP Error',
+            'errorClass'   => 'PHP::Error',
             'backtrace'    => $backtrace,
             'errorMessage' => $message,
             'extraParams'  => $extraParams,
