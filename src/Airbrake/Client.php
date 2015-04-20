@@ -80,7 +80,7 @@ class Client
             'errorClass'   => 'PHP::Error',
             'backtrace'    => $backtrace,
             'errorMessage' => $message,
-            'extraParams'  => $extraParams,
+            'extraParameters'  => $extraParams,
         ));
 
         return $this->notify($notice);
@@ -89,18 +89,18 @@ class Client
     /**
      * Notify on an exception
      *
-     * @param Exception $exception
+     * @param Exception $e
      * @param null $extraParams
      * @return string
      */
-    public function notifyOnException(Exception $exception, $extraParams = null)
+    public function notifyOnException(Exception $e, $extraParams = null)
     {
         $notice = new Notice;
         $notice->load(array(
-            'errorClass'   => get_class($exception),
-            'backtrace'    => $this->cleanBacktrace($exception->getTrace() ?: debug_backtrace()),
-            'errorMessage' => $exception->getMessage().' in '.$exception->getFile().' on line '.$exception->getLine(),
-            'extraParams'  => $extraParams,
+            'errorClass'       => get_class($e),
+            'backtrace'        => $this->cleanBacktrace($e->getTrace() ?: debug_backtrace()),
+            'errorMessage'     => $e->getMessage().' in '.$e->getFile().' on line '.$e->getLine(),
+            'extraParameters'  => $extraParams,
         ));
 
         return $this->notify($notice);
