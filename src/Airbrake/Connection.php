@@ -59,6 +59,17 @@ class Connection implements Connection\ConnectionInterface
         curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
 
+        // HTTP proxy support
+        $proxyHost = $this->configuration->get('proxyHost');
+        $proxyUser = $this->configuration->get('proxyUser');
+
+        if (null !== $proxyHost) {
+            curl_setopt($curl, CURLOPT_PROXY, $proxyHost.':'.$this->configuration->get('proxyPort'));
+            if (null !== $proxyUser) {
+                curl_setopt($curl, CURLOPT_PROXYUSERPWD, $proxyUser.':'.$this->configuration->get('proxyPass'));
+            }
+        }
+
         $return = curl_exec($curl);
         curl_close($curl);
 

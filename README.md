@@ -87,6 +87,10 @@ Configuration Options
 - **hostname** - The hostname that was requested.
 - **secure** - Optional - Boolean that allows you to define if you want to hit the secure Airbrake endpoint.
 - **errorReportingLevel** - Optional - functions the same way as the error_reporting php.ini setting (this is applied on top of show warnings parameter on the EventHandler::start method)
+- **proxyHost** - An optional HTTP proxy host through which all connections will be sent.
+- **proxyPort** - The HTTP proxy port (required only if proxyHost is supplied). Defaults to 80.
+- **proxyUser** - The HTTP proxy username (optional even if proxyHost is supplied).
+- **proxyPass** - The HTTP proxy password (required only if proxyUser is supplied).
 
 Filters
 =======

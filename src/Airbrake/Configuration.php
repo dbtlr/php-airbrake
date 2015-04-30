@@ -36,6 +36,10 @@ class Configuration extends Record
         'apiEndPoint' => null,
         'errorReportingLevel' => null,
         'extraParameters' => null,
+        'proxyHost' => null,
+        'proxyPort' => 80,
+        'proxyUser' => null,
+        'proxyPass' => null
     );
 
     /** @var array */
