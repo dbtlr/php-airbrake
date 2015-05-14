@@ -112,7 +112,7 @@ You could filter out all of the user details with the code:
 ```php
 <?php
 
-$config = Aibrake\EventHandler::getClient()->getConfiguration();
+$config = Airbrake\EventHandler::getClient()->getConfiguration();
 $config->addFilter('user');
 ```
 
@@ -121,7 +121,7 @@ Or just the password by using the filter
 ```php
 <?php
 
-$config = Aibrake\EventHandler::getClient()->getConfiguration();
+$config = Airbrake\EventHandler::getClient()->getConfiguration();
 $config->addFilter('user[password]');
 ```
 
@@ -140,7 +140,7 @@ class MyFilter implements Airbrake\Filter\FilterInterface
     }
   }
 }
-$config = Aibrake\EventHandler::getClient()->getConfiguration();
+$config = Airbrake\EventHandler::getClient()->getConfiguration();
 $config->addFilter(new MyFilter());
 ```
 
