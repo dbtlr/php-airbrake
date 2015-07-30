@@ -12,7 +12,8 @@
     }],
 
     "require-dev": {
-        "php":             ">=5.3.3",
+        "php": ">=5.3.3",
+        "ext-curl": "*",
         "phpunit/phpunit": "*",
         "squizlabs/php_codesniffer": "*"
     },
