@@ -99,7 +99,7 @@ class Client
         $notice->load(array(
             'errorClass'       => get_class($e),
             'backtrace'        => $this->cleanBacktrace($e->getTrace() ?: debug_backtrace()),
-            'errorMessage'     => $e->getMessage().' in '.$e->getFile().' on line '.$e->getLine(),
+            'errorMessage'     => $e->getMessage().' in '.$this->cleanFilePath($e->getFile()).' on line '.$e->getLine(),
             'extraParameters'  => $extraParams,
         ));
 
@@ -126,9 +126,18 @@ class Client
     protected function cleanBacktrace($backtrace)
     {
         foreach ($backtrace as &$item) {
+            if (isset($item['file'])) {
+                $item['file'] = $this->cleanFilePath($item['file']);
+            }
             unset($item['args']);
         }
 
         return $backtrace;
+    }
+
+    protected function cleanFilePath($filePath)
+    {
+        $projectRoot = $this->configuration->get('projectRoot');
+        return empty($projectRoot) ? $filePath : preg_replace("#^$projectRoot#", '[project_root]', $filePath);
     }
 }
