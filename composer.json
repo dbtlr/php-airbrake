@@ -22,5 +22,9 @@
         "psr-0": {
             "Airbrake\\": "src/"
         }
+    },
+
+    "suggest": {
+        "airbrake/phpbrake": "This package is no longer supported, please consider using the official package."
     }
 }
