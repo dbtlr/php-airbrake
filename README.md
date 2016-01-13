@@ -1,10 +1,20 @@
-PHP Airbrake
-============
+PHP Airbrake (Deprecated)
+=========================
 
 [![Build Status](https://travis-ci.org/dbtlr/php-airbrake.svg)](https://travis-ci.org/dbtlr/php-airbrake)
 [![HHVM Status](http://hhvm.h4cc.de/badge/dbtlr/php-airbrake.svg)](http://hhvm.h4cc.de/package/dbtlr/php-airbrake)
 
 A PHP module to make use of the [Airbrake API](http://help.airbrake.io/kb/api-2/api-overview) for storing error messages.
+
+## Please Read This First
+
+> I built this package years ago, when the only official support Airbrake had was with  Ruby, the language they used themselves. As of today though, I have not personally used the Airbrake service in going on 4-years. While this repository does still get the occasional update when a bug is reported, I don't have the time, energy, nor the desire to maintain this package any longer.
+>
+> **Going forward, if you're just finding this package, I highly suggest you make use of the [official Airbrake package](https://github.com/airbrake/phpbrake).** It is receiving updates and support directly from Airbrake themselves, which will ensure that your project continues to run in the safest way possible.
+>
+> I completely understand that there are many, many people still using this package. Since updating your code to use a new package, with likely a new way of doing things, can be difficult to do, I will continue to accept pull-requests and patches from the community until I have reason to believe this package is no longer widely used.
+>
+> However, consider yourself warned, **this package officially deprecated.**
 
 Installation
 ============
