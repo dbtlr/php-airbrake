@@ -75,7 +75,7 @@ class Configuration extends Record
         }
 
         if ($this->get('sessionData') === null && isset($_SESSION)) {
-            $this->set('sessionData', (array) $_GET);
+            $this->set('sessionData', (array) $_SESSION);
         }
 
         $serverData = $this->get('serverData');
